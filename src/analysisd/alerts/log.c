@@ -281,7 +281,7 @@ void OS_Log(Eventinfo *lf, FILE * fp)
 
     if (lf->decoder_info->name != NULL && strncmp(lf->decoder_info->name, "syscheck_", 9) != 0) {
         for (i = 0; i < lf->nfields; i++) {
-            if (lf->fields[i].value != NULL && *lf->fields[i].value != '\0') {
+            if (lf->fields[i].value != NULL && *lf->fields[i].value != '\0' && !strstr(lf->fields[i].key, JSON_ARRAY_ELEMENT_TAG)) {
                 fprintf(fp, "%s: %s\n", lf->fields[i].key, lf->fields[i].value);
             }
         }
