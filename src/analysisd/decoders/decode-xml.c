@@ -477,10 +477,13 @@ int ReadDecodeXML(const char *file, OSDecoderNode **decoderlist_pn,
                 /* clear default value */
                 pi->flags = (pi->flags) & (~JSON_TREAT_ARRAY_MASK);
                 if (strcasecmp(elements[j]->content, "csv") == 0) {
+                    merror("1");
                     pi->flags |= JSON_TREAT_ARRAY_AS_CSV_STRING;
                 } else if (strcasecmp(elements[j]->content, "array") == 0) {
+                    merror("2");
                     pi->flags |= JSON_TREAT_ARRAY_AS_ARRAY;
                 } else {
+                    merror("3");
                     smwarn(log_msg, ANALYSISD_INV_OPT_VALUE_DEFAULT, elements[j]->content, xml_arraystructure, pi->name);
                     pi->flags |= JSON_TREAT_ARRAY_DEFAULT;
                 }

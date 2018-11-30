@@ -13,6 +13,8 @@
 
 #include "../eventinfo.h"
 
+#define JSON_ARRAY_ELEMENT_TAG "#{!-*-¿?="
+
 /* Plugin decoder for OpenBSD PF */
 void *PF_Decoder_Init(void);
 void *PF_Decoder_Exec(Eventinfo *lf, regex_matching *decoder_match);

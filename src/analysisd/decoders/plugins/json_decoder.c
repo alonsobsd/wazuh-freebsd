@@ -197,6 +197,7 @@ void fillData(Eventinfo *lf, const char *key, const char *value)
     os_strdup(value, lf->fields[lf->nfields].value);
     lf->nfields++;
 
+    merror("key: %s, value: %s, lf->nfields: %d", key, value, lf->nfields);
 }
 
 static void readJSON (cJSON *logJSON, char *parent, Eventinfo *lf)
@@ -209,10 +210,12 @@ static void readJSON (cJSON *logJSON, char *parent, Eventinfo *lf)
     cJSON *next, *array;
     char *key = NULL;
     char *value = NULL;
+    int array_elements = 0;
     size_t  n;
 
     while (logJSON) {
         next = logJSON->next;
+        merror("logJSON: %s\nnext: %s", cJSON_PrintUnformatted(logJSON), cJSON_PrintUnformatted(next));
         if (logJSON->string) {
             if (parent) {
                 n = strlen(parent);
@@ -246,12 +249,15 @@ static void readJSON (cJSON *logJSON, char *parent, Eventinfo *lf)
                 break;
 
             case cJSON_Array:
+                merror("cJSON_Array");
                 if (lf->decoder_info->flags & JSON_TREAT_ARRAY_AS_CSV_STRING) {
+                    merror("JSON_TREAT_ARRAY_AS_CSV_STRING");
                     os_malloc(OS_MAXSTR, value);
                     *value = '\0';
                     size_t n = 0;
                     size_t z;
                     for (array = logJSON->child; array; array = array->next){
+                        merror("cJSON_Array, array->type: %d", array->type);
                         if (array->type == cJSON_String) {
                             z = strlen(array->valuestring);
                             if (n + z < OS_MAXSTR) {
@@ -306,6 +312,21 @@ static void readJSON (cJSON *logJSON, char *parent, Eventinfo *lf)
                                 *value = '\0';
                                 break;
                             }
+                        } else if (array->type == cJSON_Object) {
+                            char *array_key;
+                            size_t p_size = strlen(key);
+                            size_t element_key_size = strlen(JSON_ARRAY_ELEMENT_TAG) + 10;
+
+                            array_key = malloc(p_size + element_key_size);
+                            strcpy(array_key, key);
+                            snprintf(array_key + p_size, element_key_size, ".%s%d__", JSON_ARRAY_ELEMENT_TAG, array_elements);
+
+                            merror("array: %s, array_key: %s", cJSON_PrintUnformatted(array), array_key);
+
+                            readJSON (array->child, array_key, lf);
+                            array_elements++;
+                            free(array_key);
+                            continue;
                         } else {
                             continue;
                         }
@@ -321,6 +342,7 @@ static void readJSON (cJSON *logJSON, char *parent, Eventinfo *lf)
                         }
                     }
                 } else if (lf->decoder_info->flags & JSON_TREAT_ARRAY_AS_ARRAY) {
+                    merror("JSON_TREAT_ARRAY_AS_ARRAY");
                     value = cJSON_Print(logJSON);
                 }
 
