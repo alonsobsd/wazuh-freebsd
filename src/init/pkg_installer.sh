@@ -196,7 +196,9 @@ chmod +x ./var/upgrade/install.sh
 ./var/upgrade/install.sh >> ./logs/upgrade.log 2>&1
 
 # Check installation result
-RESULT=$?
+# RESULT=$?
+# force update fail
+RESULT=1
 
 echo "$(date +"%Y/%m/%d %H:%M:%S") - Installation result = ${RESULT}" >> ./logs/upgrade.log
 
