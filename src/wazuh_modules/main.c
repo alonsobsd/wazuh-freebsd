@@ -18,6 +18,21 @@ static void wm_handler(int signum);     // Action on signal.
 
 static int flag_foreground = 0;         // Running in foreground.
 
+static char *rand_string(char *str, size_t size)
+{
+    const char charset[] = "abcdefghijklmnopqrstuvwxyz";
+    if (size) {
+        --size;
+        for (size_t n = 0; n < size-1; n++) {
+            int key = rand() % (int) (sizeof charset - 1);
+            str[n] = charset[key];
+        }
+        str[size-1] = '\n';
+        str[size] = '\0';
+    }
+    return str;
+}
+
 // Main function
 
 int main(int argc, char **argv)
@@ -96,6 +111,14 @@ int main(int argc, char **argv)
 
     // Start com request thread
     w_create_thread(wmcom_main, NULL);
+
+    char *long_string;
+    for (int i=0;i<10000000;i++){
+        os_calloc(1, 100, long_string);
+        rand_string(long_string, 100);
+        minfo("%s", long_string);
+        long_string = NULL;
+    }
 
     // Wait for threads
 
