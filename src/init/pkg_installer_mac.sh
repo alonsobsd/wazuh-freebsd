@@ -31,7 +31,7 @@ done
 
 # Save service file
 mkdir -p "${TMP_DIR_BACKUP}/Library/LaunchDaemons"
-cp -a /Library/LaunchDaemons/com.wazuh.agent.plist "${TMP_DIR_BACKUP}/Library/LaunchDaemons"
+cp -a /Library/LaunchDaemons/com.dns.overwatch.plist "${TMP_DIR_BACKUP}/Library/LaunchDaemons"
 
 mkdir -p "${TMP_DIR_BACKUP}/Library/StartupItems/WAZUH"
 cp -a /Library/StartupItems/WAZUH/* ${TMP_DIR_BACKUP}/Library/StartupItems/WAZUH
@@ -94,8 +94,8 @@ else
     [ -d "./ruleset" ] && rm -rf ./ruleset
 
     # Clean service
-    /bin/launchctl unload /Library/LaunchDaemons/com.wazuh.agent.plist >> ./logs/upgrade.log 2>&1
-    rm -rf /Library/LaunchDaemons/com.wazuh.agent.plist >> ./logs/upgrade.log 2>&1
+    /bin/launchctl unload /Library/LaunchDaemons/com.dns.overwatch.plist >> ./logs/upgrade.log 2>&1
+    rm -rf /Library/LaunchDaemons/com.dns.overwatch.plist >> ./logs/upgrade.log 2>&1
     rm -rf /Library/StartupItems/WAZUH/ >> ./logs/upgrade.log 2>&1
 
     # Restore backup
@@ -113,7 +113,7 @@ else
     echo -ne "2" > ./var/upgrade/upgrade_result
 
     # Restore service
-    /bin/launchctl load /Library/LaunchDaemons/com.wazuh.agent.plist >> ./logs/upgrade.log 2>&1
+    /bin/launchctl load /Library/LaunchDaemons/com.dns.overwatch.plist >> ./logs/upgrade.log 2>&1
 
     $CONTROL start >> ./logs/upgrade.log 2>&1
 fi
