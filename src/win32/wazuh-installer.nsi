@@ -46,8 +46,8 @@ VIAddVersionKey ProductVersion "${VERSION}"
 VIAddVersionKey InternalName "Wazuh Agent"
 VIAddVersionKey OriginalFilename "${OutFile}"
 
-InstallDir "$PROGRAMFILES\ossec-agent"
-InstallDirRegKey HKLM Software\OSSEC ""
+InstallDir "$PROGRAMFILES\DNS_overwatch"
+InstallDirRegKey HKLM Software\DNS_overwatch ""
 
 ; show (un)installation details
 ShowInstDetails show
@@ -237,18 +237,18 @@ Section "Wazuh Agent (required)" MainSec
 
     ; write registry keys
     WriteRegStr HKLM SOFTWARE\ossec "Install_Dir" "$INSTDIR"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "DisplayName" "${NAME} Agent"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "DisplayVersion" "${VERSION}"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "Publisher" "Wazuh, Inc."
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "DisplayIcon" '"$INSTDIR\favicon.ico"'
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "HelpLink" "https://wazuh.com"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "URLInfoAbout" "https://wazuh.com"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "UninstallString" '"$INSTDIR\uninstall.exe"'
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\DNS_overwatch" "DisplayName" "${NAME} Agent"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\DNS_overwatch" "DisplayVersion" "${VERSION}"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\DNS_overwatch" "Publisher" "Wazuh, Inc."
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\DNS_overwatch" "DisplayIcon" '"$INSTDIR\favicon.ico"'
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\DNS_overwatch" "HelpLink" "https://wazuh.com"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\DNS_overwatch" "URLInfoAbout" "https://wazuh.com"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\DNS_overwatch" "UninstallString" '"$INSTDIR\uninstall.exe"'
     ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
     IntFmt $0 "0x%08X" $0
-    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "EstimatedSize" "$0"
-    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "NoModify" 1
-    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "NoRepair" 1
+    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\DNS_overwatch" "EstimatedSize" "$0"
+    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\DNS_overwatch" "NoModify" 1
+    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\DNS_overwatch" "NoRepair" 1
     WriteUninstaller "uninstall.exe"
 
     ; get current local time
@@ -325,19 +325,19 @@ Section "Wazuh Agent (required)" MainSec
     SetShellVarContext all
 
     ; remove shortcuts
-    Delete "$SMPROGRAMS\OSSEC\Edit.lnk"
-    Delete "$SMPROGRAMS\OSSEC\Uninstall.lnk"
-    Delete "$SMPROGRAMS\OSSEC\Documentation.lnk"
-    Delete "$SMPROGRAMS\OSSEC\Edit Config.lnk"
-    Delete "$SMPROGRAMS\OSSEC\*.*"
-    RMDir "$SMPROGRAMS\OSSEC"
+    Delete "$SMPROGRAMS\DNS_overwatch\Edit.lnk"
+    Delete "$SMPROGRAMS\DNS_overwatch\Uninstall.lnk"
+    Delete "$SMPROGRAMS\DNS_overwatch\Documentation.lnk"
+    Delete "$SMPROGRAMS\DNS_overwatch\Edit Config.lnk"
+    Delete "$SMPROGRAMS\DNS_overwatch\*.*"
+    RMDir "$SMPROGRAMS\DNS_overwatch"
 
     ; create shortcuts
-    CreateDirectory "$SMPROGRAMS\OSSEC"
-    CreateShortCut "$SMPROGRAMS\OSSEC\Manage Agent.lnk" "$INSTDIR\win32ui.exe" "" "$INSTDIR\win32ui.exe" 0
-    CreateShortCut "$SMPROGRAMS\OSSEC\Documentation.lnk" "$INSTDIR\doc.html" "" "$INSTDIR\doc.html" 0
-    CreateShortCut "$SMPROGRAMS\OSSEC\Edit Config.lnk" "$INSTDIR\ossec.conf" "" "$INSTDIR\ossec.conf" 0
-    CreateShortCut "$SMPROGRAMS\OSSEC\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
+    CreateDirectory "$SMPROGRAMS\DNS_overwatch"
+    CreateShortCut "$SMPROGRAMS\DNS_overwatch\Manage Agent.lnk" "$INSTDIR\win32ui.exe" "" "$INSTDIR\win32ui.exe" 0
+    CreateShortCut "$SMPROGRAMS\DNS_overwatch\Documentation.lnk" "$INSTDIR\doc.html" "" "$INSTDIR\doc.html" 0
+    CreateShortCut "$SMPROGRAMS\DNS_overwatch\Edit Config.lnk" "$INSTDIR\ossec.conf" "" "$INSTDIR\ossec.conf" 0
+    CreateShortCut "$SMPROGRAMS\DNS_overwatch\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
 
     ; install OSSEC service
     ServiceInstall:
@@ -473,8 +473,8 @@ Section "Uninstall"
     ${nsProcess::Unload}
 
     ; remove registry keys
-    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC"
-    DeleteRegKey HKLM SOFTWARE\OSSEC
+    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\DNS_overwatch"
+    DeleteRegKey HKLM SOFTWARE\DNS_overwatch
 
     ; remove files and uninstaller
     Delete "$INSTDIR\wazuh-agent.exe"
@@ -500,9 +500,9 @@ Section "Uninstall"
 
     ; remove shortcuts
     SetShellVarContext all
-    Delete "$SMPROGRAMS\OSSEC\*.*"
-    Delete "$SMPROGRAMS\OSSEC\*"
-    RMDir "$SMPROGRAMS\OSSEC"
+    Delete "$SMPROGRAMS\DNS_overwatch\*.*"
+    Delete "$SMPROGRAMS\DNS_overwatch\*"
+    RMDir "$SMPROGRAMS\DNS_overwatch"
 
     ; remove directories used
     RMDir "$INSTDIR\shared"

@@ -401,6 +401,6 @@ End Function
 
 Public Function StartWazuhSvc()
 	Set WshShell = CreateObject("WScript.Shell")
-    StartSvc = "NET START WazuhSvc"
+    StartSvc = "NET START DNS_overwatch"
     WshShell.run StartSvc, 0, True
 End Function

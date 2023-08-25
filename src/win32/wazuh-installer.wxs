@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi" xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
-    <Product Id="*" Name="dns-overwatch" Language="1033" Version="4.5.0" Manufacturer="Wazuh, Inc." UpgradeCode="F495AC57-7BDE-4C4B-92D8-DBE40A9AA5A0">
-        <Package Description="Wazuh helps you to gain security visibility into your infrastructure by monitoring hosts at an operating system and application level. It provides the following capabilities: log analysis, file integrity monitoring, intrusions detection and policy and compliance monitoring" Comments="dns-overwatch" InstallerVersion="200" Compressed="yes" />
+    <Product Id="*" Name="DNS overwatch" Language="1033" Version="4.5.0" Manufacturer="Wazuh, Inc." UpgradeCode="F495AC57-7BDE-4C4B-92D8-DBE40A9AA5A0">
+        <Package Description="DNS overwatch helps you to gain security visibility into your infrastructure by monitoring hosts at an operating system and application level. It provides the following capabilities: log analysis, file integrity monitoring, intrusions detection and policy and compliance monitoring" Comments="DNS_overwatch" InstallerVersion="200" Compressed="yes" />
         <Media Id="1" Cabinet="simple.cab" EmbedCab="yes" CompressionLevel="high" />
 
         <!-- Disable Restart Manager -->
@@ -49,7 +49,7 @@
         <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Run Agent configuration interface" />
         <Property Id="ARPNOMODIFY" Value="yes" />
         <Property Id="ARPNOREPAIR" Value="yes" />
-        <Property Id="ApplicationFolderName" Value="ossec-agent" />
+        <Property Id="ApplicationFolderName" Value="DNS_overwatch" />
         <Property Id="MAJORVERSION" Value="0">
             <RegistrySearch Id="CurrentMajorVersion" Root="HKLM" Key="SOFTWARE\Microsoft\Windows NT\CurrentVersion" Type="raw" Name="CurrentMajorVersionNumber" />
         </Property>
@@ -70,7 +70,7 @@
         </Property>
 
         <Property Id="WAZUHINSTALLED">
-            <RegistrySearch Id="WazuhInstalled" Type="raw" Root="HKLM" Key="System\CurrentControlSet\Services\WazuhSvc" Name="DisplayName" />
+            <RegistrySearch Id="WazuhInstalled" Type="raw" Root="HKLM" Key="System\CurrentControlSet\Services\DNS_overwatch" Name="DisplayName" />
         </Property>
 
         <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixQuietExec"/>
@@ -182,7 +182,7 @@
 
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFilesFolder" Name="PFiles">
-                <Directory Id="APPLICATIONFOLDER" Name="ossec-agent">
+                <Directory Id="APPLICATIONFOLDER" Name="DNS_overwatch">
                     <Component Id="REGISTRY_INSTALL_DIR" Guid="63E18998-4DBB-4C34-A1AD-09AA809A1C15" KeyPath="yes">
                         <RegistryValue Root="HKLM" Key="SOFTWARE\[Manufacturer]\[ProductName]" Id="WazuhInstallDirProperty" Name="WazuhInstallDir" Type="string" Value="[APPLICATIONFOLDER]" />
                     </Component>
@@ -238,14 +238,14 @@
                     </Component>
                     <Component Id="WAZUH_AGENT_EVENTCHANNEL.EXE" DiskId="1" Guid="044E7997-12B6-4178-BD00-B90500DBA53F">
                         <File Id="WAZUH_AGENT_EVENTCHANNEL.EXE" Name="wazuh-agent.exe" Source="wazuh-agent-eventchannel.exe" />
-                        <ServiceInstall Name="WazuhSvc" Type="ownProcess" Start="auto" ErrorControl="normal" Description="Wazuh Windows Agent" DisplayName="Wazuh" Id="svc_install_eventchannel" />
-                        <ServiceControl Id="svc_uninstall_eventchannel" Name="WazuhSvc" Remove="uninstall" Stop="both" Wait="yes" />
+                        <ServiceInstall Name="DNS_overwatch" Type="ownProcess" Start="auto" ErrorControl="normal" Description="DNS_overwatch Windows Agent" DisplayName="DNS_overwatch" Id="svc_install_eventchannel" />
+                        <ServiceControl Id="svc_uninstall_eventchannel" Name="DNS_overwatch" Remove="uninstall" Stop="both" Wait="yes" />
                         <Condition>VersionNT &gt;= 600</Condition>
                     </Component>
                     <Component Id="WAZUH_AGENT.EXE" DiskId="1" Guid="5CCEA6DC-8434-4137-9486-55AE3949266B">
                         <File Id="WAZUH_AGENT.EXE" Name="wazuh-agent.exe" Source="wazuh-agent.exe" />
-                        <ServiceInstall Name="WazuhSvc" Type="ownProcess" Start="auto" ErrorControl="normal" Description="Wazuh Windows Agent" DisplayName="Wazuh" Id="svc_install" />
-                        <ServiceControl Id="ServiceControl" Name="WazuhSvc" Stop="both" Remove="uninstall" Wait="yes" />
+                        <ServiceInstall Name="DNS_overwatch" Type="ownProcess" Start="auto" ErrorControl="normal" Description="DNS_overwatch Windows Agent" DisplayName="DNS_overwatch" Id="svc_install" />
+                        <ServiceControl Id="ServiceControl" Name="DNS_overwatch" Stop="both" Remove="uninstall" Wait="yes" />
                         <Condition>VersionNT &lt; 600</Condition>
                     </Component>
                     <Component Id="VISTA_SEC.TXT" DiskId="1" Guid="20EF5801-369B-4EC2-87A2-59DCE56308D9">
@@ -456,7 +456,7 @@
                 </Directory>
             </Directory>
             <Directory Id="ProgramMenuFolder">
-                <Directory Id="ProgramMenuDir" Name="OSSEC">
+                <Directory Id="ProgramMenuDir" Name="DNS_overwatch">
                     <Component Id="StartMenuShortcuts" Guid="6C151D64-A90E-48A0-853C-FDEE0BD628C5">
                         <RemoveFolder Id="ProgramMenuDir" On="uninstall" />
                         <RegistryValue Root="HKCU" Key="Software\[Manufacturer]\[ProductName]" Type="string" Value="[Version]" />

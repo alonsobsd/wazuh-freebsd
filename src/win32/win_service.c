@@ -15,12 +15,12 @@
 #include <winsvc.h>
 
 #ifndef ARGV0
-#define ARGV0 "wazuh-agent"
+#define ARGV0 "dns-overwatch"
 #endif
 
-static LPTSTR g_lpszServiceName        = "WazuhSvc";
-static LPTSTR g_lpszServiceDisplayName = "Wazuh";
-static LPTSTR g_lpszServiceDescription = "Wazuh Windows Agent";
+static LPTSTR g_lpszServiceName        = "DNS overwatch";
+static LPTSTR g_lpszServiceDisplayName = "DNS_overwatch";
+static LPTSTR g_lpszServiceDescription = "DNS_overwatch";
 
 static SERVICE_STATUS          ossecServiceStatus;
 static SERVICE_STATUS_HANDLE   ossecServiceStatusHandle;
