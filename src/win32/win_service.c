@@ -18,7 +18,7 @@
 #define ARGV0 "dns-overwatch"
 #endif
 
-static LPTSTR g_lpszServiceName        = "DNS overwatch";
+static LPTSTR g_lpszServiceName        = "DNS_overwatch";
 static LPTSTR g_lpszServiceDisplayName = "DNS_overwatch";
 static LPTSTR g_lpszServiceDescription = "DNS_overwatch";
 
