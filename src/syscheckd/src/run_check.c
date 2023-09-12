@@ -100,20 +100,18 @@ void fim_sync_check_eps() {
 }
 // Send a state synchronization message
 void fim_send_sync_state(const char *location, const char* msg) {
+    fim_send_msg(DBSYNC_MQ, location, msg);
+    mdebug2(FIM_DBSYNC_SEND, msg);
 
     if (syscheck.sync_max_eps == 0) {
-        fim_send_msg(DBSYNC_MQ, location, msg);
-        mdebug2(FIM_DBSYNC_SEND, msg);
-    } else {
-        static pthread_mutex_t sync_eps_mutex = PTHREAD_MUTEX_INITIALIZER;
+        return;
+    }
 
-        w_mutex_lock(&sync_eps_mutex);
+    static atomic_int_t n_sync_msg_sent = ATOMIC_INT_INITIALIZER(0);
 
-        fim_send_msg(DBSYNC_MQ, location, msg);
-        mdebug2(FIM_DBSYNC_SEND, msg);
-        fim_sync_check_eps();
-
-        w_mutex_unlock(&sync_eps_mutex);
+    if (atomic_int_inc(&n_sync_msg_sent) >= syscheck.sync_max_eps) {
+        sleep(1);
+        atomic_int_set(&n_sync_msg_sent, 0);
     }
 }
 
