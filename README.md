@@ -3,6 +3,7 @@ Resources for add a better FreeBSD support into Wazuh SIEM
 
 FreeBSD Security Configuration Assessment for Wazuh (var/ossec/ruleset/sca)
 
-![image](https://github.com/alonsobsd/wazuh-freebsd-sca/assets/11150989/55985a2a-a460-4b42-9698-a07852c0f131)
+![image](https://github.com/alonsobsd/wazuh-freebsd/assets/11150989/294d6231-e7e8-4ce0-be5f-50c64aefe415)
 
-![image](https://github.com/alonsobsd/wazuh-freebsd-sca/assets/11150989/f53d14d0-0d46-4bb9-8b9c-5d6dbbf9e977)
+![image](https://github.com/alonsobsd/wazuh-freebsd/assets/11150989/e576675d-2ab4-4559-b9a1-3e792daedf1e)
+
