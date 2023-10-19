@@ -1,0 +1,13 @@
+<!--
+  -  FreeBSD decoders
+  -  Author: Alonso Cardenas
+  -  Copyright (C) 2023 Alonso Cardenas <acm@FreeBSD.org>
+  -  You can redistribute it and/or modify it under the terms of BSD 3-Clause License.
+-->
+
+<decoder name="userlog">
+  <type>syslog</type>
+  <parent>windows-date-format</parent>
+  <regex>^(\d\d\d\d-\d\d-\d\d) (\d\d:\d\d:\d\d) [(\w+):(\w+)] (\.+)</regex>
+  <order>date, time, user, action, extra_data</order>
+</decoder>

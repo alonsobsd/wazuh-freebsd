@@ -1,0 +1,66 @@
+<!--
+  -  FreeBSD ruleset
+  -  Created by Alonso Cardenas
+  -  Copyright (C) 2023, Alonso Cardenas <acm@FreeBSD.org>
+  -  You can redistribute it and/or modify it under the terms of BSD 3-Clause License.
+-->
+
+<!--
+    ID range: 99900 - 100000
+-->
+<group name="freebsd,">
+  <rule id="99900" level="3">
+    <decoded_as>windows-date-format</decoded_as>
+    <action>useradd</action>
+    <description>A new user account has been added.</description>
+    <mitre>
+      <id>T1136.001</id>
+      <id>T1078.003</id>
+    </mitre>
+  </rule>
+  <rule id="99901" level="3">
+    <decoded_as>windows-date-format</decoded_as>
+    <action>usermod</action>
+    <description>An user account has been modified.</description>
+    <mitre>
+      <id>T1136.001</id>
+      <id>T1078.003</id>
+    </mitre>
+  </rule>
+  <rule id="99902" level="3">
+    <decoded_as>windows-date-format</decoded_as>
+    <action>userdel</action>
+    <description>An user account was deleted.</description>
+    <mitre>
+      <id>T1136.001</id>
+      <id>T1078.003</id>
+    </mitre>
+  </rule>
+  <rule id="99903" level="3">
+    <decoded_as>windows-date-format</decoded_as>
+    <action>groupadd</action>
+    <description>A new group has been added.</description>
+    <mitre>
+      <id>T1136.001</id>
+      <id>T1078.003</id>
+    </mitre>
+  </rule>
+  <rule id="99904" level="3">
+    <decoded_as>windows-date-format</decoded_as>
+    <action>groupmod</action>
+    <description>A group has been modified.</description>
+    <mitre>
+      <id>T1136.001</id>
+      <id>T1078.003</id>
+    </mitre>
+  </rule>
+  <rule id="99905" level="3">
+    <decoded_as>windows-date-format</decoded_as>
+    <action>groupdel</action>
+    <description>A group was deleted.</description>
+    <mitre>
+      <id>T1136.001</id>
+      <id>T1078.003</id>
+    </mitre>
+  </rule>
+</group>
