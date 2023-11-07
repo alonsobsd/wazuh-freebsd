@@ -133,7 +133,7 @@ function get_uninstall_string {
             foreach ($subsubpath in $subpath) {
                 if ($subsubpath -match "InstallProperties") {
                     if ($subsubpath.GetValue("Publisher") -match $Env:WAZUH_PUBLISHER_VALUE) {
-                        $UninstallString = $subsubpath.GetValue("UninstallString") + " /quiet"
+                        $UninstallString = $subsubpath.GetValue("UninstallString") + " /quiet /forcerestart"
                     }
                 }
             }
@@ -285,6 +285,7 @@ while($status -ne "connected"  -And $counter -gt 0)
 }
 Write-Output "$(Get-Date -Format u) - Reading status file: status='$status'." >> .\upgrade\upgrade.log
 
+$status = $null
 If ($status -ne "connected")
 {
     Get-Service -Name "Wazuh" | Stop-Service
