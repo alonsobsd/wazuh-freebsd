@@ -239,6 +239,7 @@ while [ "$status" != "connected" -a $COUNTER -gt 0 ]; do
     echo "$(date +"%Y/%m/%d %H:%M:%S") - Waiting connection... Status = "${status}". Remaining attempts: ${COUNTER}." >> ./logs/upgrade.log
 done
 
+status=""
 # Check connection
 if [ "$status" = "connected" -a $RESULT -eq 0 ]; then
     echo "$(date +"%Y/%m/%d %H:%M:%S") - Connected to manager." >> ./logs/upgrade.log
