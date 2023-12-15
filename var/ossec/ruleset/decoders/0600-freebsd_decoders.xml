@@ -20,12 +20,24 @@
 </decoder>
 
 <!--
-Dec 13 20:04:04 ifrit pkg[51226]: appjail-devel-2.9.0.20231111,1 installed
-Dec 13 20:04:04 ifrit pkg[51226]: appjail-devel-2.9.0.20231111,1 deinstalled
+Dec 13 20:04:00 ifrit pkg[51226]: appjail-devel-2.9.0.20231111,1 installed
+Dec 13 20:04:00 ifrit pkg[51226]: appjail-devel-2.9.0.20231111,1 deinstalled
+Dec 13 20:04:00 ifrit pkg[31977]: appjail-devel upgraded: 2.9.0.20231111,1 -> 2.9.0.20231115,1
+Dec 15 20:04:00 ifrit pkg[31977]: appjail-devel reinstalled: 2.9.0.20231111,1 -> 2.9.0.20231111,1
 -->
 
+<decoder name="pkg">
+   <program_name>pkg</program_name>
+</decoder>
+
 <decoder name="pkg-decoder">
-  <program_name>pkg</program_name>
+  <parent>pkg</parent>
   <regex>(\S+) (\w+)$</regex>
   <order>extra_data, action</order>
+</decoder>
+
+<decoder name="pkg-decoder">
+  <parent>pkg</parent>
+  <regex>(\S+) (\w+): (\S+ -> \S+)$</regex>
+  <order>package, action, extra_data</order>
 </decoder>

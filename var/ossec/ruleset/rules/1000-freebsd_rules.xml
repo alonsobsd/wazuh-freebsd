@@ -73,4 +73,14 @@
     <description>Pkg (FreeBSD Package) installed.</description>
     <group>config_changed,pci_dss_10.6.1,pci_dss_10.2.7,gpg13_4.10,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6,nist_800_53_AU.14,tsc_CC7.2,tsc_CC7.3,tsc_CC6.8,tsc_CC8.1,</group>
   </rule>
+  <rule id="99908" level="7">
+    <action>reinstalled</action>
+    <description>Pkg (FreeBSD Package) reinstalled.</description>
+    <group>config_changed,pci_dss_10.6.1,pci_dss_10.2.7,gpg13_4.10,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6,nist_800_53_AU.14,tsc_CC7.2,tsc_CC7.3,tsc_CC6.8,tsc_CC8.1,</group>
+  </rule>
+  <rule id="99909" level="7">
+    <action>upgraded</action>
+    <description>Pkg (FreeBSD Package) upgraded.</description>
+    <group>config_changed,pci_dss_10.6.1,pci_dss_10.2.7,gpg13_4.10,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6,nist_800_53_AU.14,tsc_CC7.2,tsc_CC7.3,tsc_CC6.8,tsc_CC8.1,</group>
+  </rule>
 </group>
