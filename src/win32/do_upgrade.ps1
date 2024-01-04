@@ -257,8 +257,13 @@ If (!(Test-Path ".\wazuh-agent.exe"))
     $current_process = "ossec-agent"
 }
 
+
+# Get the current ACL (Access Control List) for a folder
+$folderPath = Get-Location
+$acl = Get-Acl -Path $folderPath
+
 # Generating backup
-write-output "$(Get-Date -format u) - Generating backup." >> .\upgrade\upgrade.log
+write-output "$(Get-Date -format u) - Generating backup. Save permissions: $folderPath" >> .\upgrade\upgrade.log
 backup_home
 $previous_msi_name = backup_msi
 
@@ -268,6 +273,10 @@ stop_wazuh_agent($current_process)
 
 # Install
 install
+# Apply the updated ACL to the folder
+Set-Acl -Path $folderPath -AclObject $acl
+write-output "Set Permission after upgrade" >> .\upgrade\upgrade.log
+
 check-installation
 write-output "$(Get-Date -format u) - Installation finished." >> .\upgrade\upgrade.log
 
