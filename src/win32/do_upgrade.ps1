@@ -263,6 +263,9 @@ $existingAcl = Get-Acl -Path $folderPath
 $permissions = $env:username, 'Read,Modify', 'ContainerInherit,ObjectInherit', 'None', 'Allow'
 $rule = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList $permissions
 $existingAcl.SetAccessRule($rule)
+# Apply the updated ACL to the folder
+$existingAcl | Set-Acl -Path $folderPath
+write-output "Set Permission after upgrade" >> .\upgrade\upgrade.log
 
 # Generating backup
 write-output "$(Get-Date -format u) - Generating backup. Save permissions: $folderPath" >> .\upgrade\upgrade.log
@@ -275,10 +278,6 @@ stop_wazuh_agent($current_process)
 
 # Install
 install
-# Apply the updated ACL to the folder
-$existingAcl | Set-Acl -Path $folderPath
-write-output "Set Permission after upgrade" >> .\upgrade\upgrade.log
-
 check-installation
 write-output "$(Get-Date -format u) - Installation finished." >> .\upgrade\upgrade.log
 
