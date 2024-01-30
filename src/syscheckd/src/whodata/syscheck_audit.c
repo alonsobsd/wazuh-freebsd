@@ -58,6 +58,53 @@ typedef struct _audit_data_s {
  */
 static void *audit_main(audit_data_t *audit_data);
 
+int audit_check_lock_output(void) {
+    int retval;
+    int audit_handler;
+
+    int flags = AUDIT_FILTER_TASK;
+    mwarn("Second step.");
+
+    audit_handler = audit_open();
+    if (audit_handler < 0) {
+        return (-1);
+    }
+
+    struct audit_rule_data *myrule = NULL;
+    myrule = malloc(sizeof(struct audit_rule_data));
+    memset(myrule, 0, sizeof(struct audit_rule_data));
+    mwarn("3 step.");
+
+    retval = audit_add_rule_data(audit_handler, myrule, flags, AUDIT_NEVER);
+
+    if (retval == -17) {
+        mwarn("4 step.");
+        retval = audit_delete_rule_data(audit_handler, myrule, flags, AUDIT_NEVER);
+        audit_rule_free_data(myrule);
+        audit_close(audit_handler);
+        if (retval < 0) {
+            mwarn("6 step.");
+            mdebug2("audit_delete_rule_data = (%i) %s", retval, audit_errno_to_name(abs(retval)));
+            merror("Error removing test rule. Audit output is blocked.");
+            return 1;
+        }
+        return 0;
+    } else {
+        mwarn("5 step.");
+        // Delete if it was inserted
+        retval = audit_delete_rule_data(audit_handler, myrule, flags, AUDIT_NEVER);
+        audit_rule_free_data(myrule);
+        audit_close(audit_handler);
+        if (retval < 0) {
+            mwarn("6 step.");
+            mdebug2("audit_delete_rule_data = (%i) %s", retval, audit_errno_to_name(abs(retval)));
+            merror("Error removing test rule. Audit output is blocked.");
+            return 1;
+        }
+        return 0;
+    }
+}
+
 int check_auditd_enabled(void) {
     PROCTAB *proc = openproc(PROC_FILLSTAT | PROC_FILLSTATUS | PROC_FILLCOM );
     proc_t *proc_info;
@@ -333,6 +380,15 @@ int audit_init(void) {
         mwarn(FIM_AUDIT_NORUNNING);
         return (-1);
     }
+
+    // Check if there's a blockig rule
+    mwarn("00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000 step.");
+    sleep(10);
+    mwarn("go step.");
+    audit_restart();
+    mwarn("after restart step.");
+
+
 
     // Check audit socket configuration
     switch (set_auditd_config()) {
