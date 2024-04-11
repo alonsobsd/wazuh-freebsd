@@ -140,6 +140,51 @@ jobs:
           name: windowsPKG
           path: /tmp/windowsPKG
 
+      - name: Install OpenVPN
+        run: |         
+          sudo apt update
+          sudo apt install -y openvpn openvpn-systemd-resolved
+      
+      - name: Get config
+        run: |
+          echo "${{ secrets.CI_VPN_GITHUB }}" > vpn.ovpn
+          
+      - name: Connect VPN
+        run: sudo openvpn --config "vpn.ovpn" --daemon
+
+      - name: Wait for a VPN connection
+        timeout-minutes: 1
+        run: until ping -c1 10.10.0.252; do sleep 2; done
+
+     # Add here the VPN tasks
+      
+      - name: Set allocation module
+        run: |
+          python3 -m venv /tmp/python_env
+          source /tmp/python_env/bin/activate
+          cd /tmp
+          git clone https://github.com/wazuh/wazuh-qa.git
+          cd wazuh-qa
+          git checkout QA_BRANCH
+          pip3 install -r deployability/deps/requirements.txt
+          cd modules
+          pip3 uninstall -y workflow_engine && pip3 install .
+        # RUN allocator module
+
+     # SSH every step in the Windows machine to sign code
+     # Need some parameters, clone repo, maybe we need a script to do this
+     # Send pkg.zip or use artifact if needed
+     # Check sign?
+
+     # tasks
+     
+      - name: Kill VPN connection
+        if: always()
+        run: |
+          sudo killall openvpn
+
+
+
   generate-msi-agent:
     runs-on: windows-latest
     needs: build-agent-windows-base
