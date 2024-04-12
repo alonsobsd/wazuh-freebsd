@@ -1,4 +1,4 @@
-name: Build Wazuh Agent Packages - DEB|RPM - amd64|i386|arm64|armhf
+name: Build Wazuh Agent Packages - DEB|RPM - arm64|armhf
 on:
   workflow_dispatch:
     inputs:
@@ -12,12 +12,9 @@ on:
         default: 'auto'
       architecture:
         type: choice
-        description: Package architecture [i386, x86_64, armv7hl, aarch64, amd64, armhf, arm64].
+        description: Package architecture [arm64, armhf, armv7hl, aarch64].
         required: true
         options:
-          - amd64
-          - x86_64
-          - i386
           - arm64
           - armhf
           - armv7hl
@@ -37,12 +34,6 @@ on:
         type: boolean
         description: |
           Set production nomenclature if true.
-          Default is 'false'.
-        required: false
-      legacy:
-        type: boolean
-        description: |
-          Set the use of rpm5 resources.
           Default is 'false'.
         required: false
       debug:
@@ -76,9 +67,6 @@ on:
       is_stage:
         type: boolean
         required: false
-      legacy:
-        type: boolean
-        required: false
       debug:
         type: boolean
         required: false
@@ -89,32 +77,19 @@ on:
 jobs:
   Build-agent-linux-packages:
     runs-on: ubuntu-latest
-    name: Build ${{ inputs.system }} wazuh-agent on ${{ inputs.architecture }} ${{ inputs.legacy && '- legacy' || '' }} ${{ inputs.is_stage && '- is stage' || '' }}
+    name: Build ${{ inputs.system }} wazuh-agent on ${{ inputs.architecture }} ${{ inputs.is_stage && '- is stage' || '' }}
 
     steps:
-      - name: Cancel previous runs
-        uses: fkirc/skip-duplicate-actions@master
-        with:
-          cancel_others: 'true'
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          skip_after_successful_duplicate: 'false'
-
       - uses: actions/checkout@v4
-
+          
       - name: Set ARCH
         run: |
-          if [ ${{ inputs.system }} == 'rpm' ]; then
-            if [ "${{ inputs.architecture }}" = "armv7hl" ]; then
-                arch="armhf"
-            elif [ "${{ inputs.architecture }}" = "aarch64" ]; then
-                arch="arm64"
-            elif [ "${{ inputs.architecture }}" = "x86_64" ]; then
-                arch="amd64"
-            else
-                arch=${{ inputs.architecture }}
-            fi
+          if [ "${{ inputs.architecture }}" = "armv7hl" ]; then
+              arch="armhf"
+          elif [ "${{ inputs.architecture }}" = "aarch64" ]; then
+              arch="arm64"
           else
-            arch=${{ inputs.architecture }}
+              arch=${{ inputs.architecture }}
           fi
           echo "ARCH=$arch" >> $GITHUB_ENV;
 
@@ -124,15 +99,7 @@ jobs:
           if [ "${{ inputs.docker_image_tag }}" == "auto" ]; then echo "TAG=$VERSION" >> $GITHUB_ENV;
           elif [ "${{ inputs.docker_image_tag }}" == "developer" ]; then echo "TAG=${{ github.ref_name }}" >> $GITHUB_ENV;
           else echo "TAG=${{ inputs.docker_image_tag }}" >> $GITHUB_ENV; fi
-          if [ "${{ inputs.legacy }}" == "true" ]; then
-            echo "CONTAINER_NAME=pkg_${{ inputs.system }}_legacy_builder_${{ env.ARCH }}" >> $GITHUB_ENV
-          else
-            echo "CONTAINER_NAME=pkg_${{ inputs.system }}_agent_builder_${{ env.ARCH }}" >> $GITHUB_ENV
-          fi
-
-      - name: Download docker image for package building
-        run: |
-          bash $GITHUB_WORKSPACE/.github/actions/ghcr-pull-and-push/pull_image_from_ghcr.sh ${{ secrets.GITHUB_TOKEN }} ${{ github.actor}} $CONTAINER_NAME ${{ env.TAG }}
+          echo "CONTAINER_NAME=pkg_${{ inputs.system }}_agent_builder_${{ env.ARCH }}" >> $GITHUB_ENV
 
       - name: Build ${{ inputs.system }} wazuh-agent on ${{ env.ARCH }}
         working-directory: packages
@@ -141,11 +108,49 @@ jobs:
           FLAGS="-t agent -s /tmp --dont-build-docker -j $(nproc) "
           if [ -z "$REVISION" ]; then FLAGS+="-r 0 "; else FLAGS+="-r $REVISION "; fi
           if [ "${{ inputs.is_stage }}" == "true" ]; then FLAGS+="--is_stage "; fi
-          if [ "${{ inputs.legacy }}" == "true" ]; then FLAGS+="--legacy "; fi
           if [ "${{ inputs.checksum }}" == "true" ] && [ ${{ inputs.is_stage}} == "true" ]; then FLAGS+="--checksum "; fi
           if [ "${{ inputs.debug}}" == "true" ]; then FLAGS+="--debug "; fi
-          echo "generate_package.sh -a ${{ env.ARCH }} --tag ${{ env.TAG }} --system ${{ inputs.system }} $FLAGS"
-          bash generate_package.sh -a ${{ env.ARCH }} --tag ${{ env.TAG }} --system ${{ inputs.system }} $FLAGS
+          echo "FLAGS=$FLAGS" >> $GITHUB_ENV
+
+      - name: Download docker image for package building
+        run: |
+          bash $GITHUB_WORKSPACE/.github/actions/ghcr-pull-and-push/pull_image_from_ghcr.sh ${{ secrets.GITHUB_TOKEN }} ${{ github.actor}} $CONTAINER_NAME ${{ env.TAG }}
+      
+      - name: Install OpenVPN
+        run: |         
+          sudo apt update
+          sudo apt install -y openvpn openvpn-systemd-resolved
+      
+      - name: Get config
+        run: |
+          echo "${{ secrets.CI_VPN_GITHUB }}" > vpn.ovpn
+
+      - name: Connect VPN
+        run: sudo openvpn --config "vpn.ovpn" --daemon
+
+      - name: Wait for a VPN connection
+        timeout-minutes: 1
+        run: until ping -c1 10.10.0.252; do sleep 2; done
+        
+# apt install python3.11-venv
+      - name: Execute allocation module
+        run: |
+          python3 -m venv /workingenv
+          source /workingenv/bin/activate
+          git clone https://github.com/wazuh/wazuh-qa.git
+          cd wazuh-qa
+          pip3 install -r deployability/deps/requirements.txt
+          cd deployability/
+          pip3 install modules/
+          python3 modules/allocation/main.py --action create --provider aws --size large --composite-name linux-ubuntu-22.04-arm64 --label-team core --label-termination-date 1h
+
+      # SSH every step in the ARM machine to build pkg
+      #########################################################
+      - name: Generate package script
+        working-directory: packages
+        run: |
+          echo "generate_package.sh -a ${{ env.ARCH }} --tag ${{ env.TAG }} --system ${{ inputs.system }} ${{ env.FLAGS }}"
+          bash generate_package.sh -a ${{ env.ARCH }} --tag ${{ env.TAG }} --system ${{ inputs.system }} ${{ env.FLAGS }}
 
       - name: Test install built package
         run: |
@@ -165,6 +170,17 @@ jobs:
           aws-access-key-id: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_ACCESS_KEY }}
           aws-secret-access-key: ${{ secrets.CI_INTERNAL_DEVELOPMENT_BUCKET_USER_SECRET_KEY }}
           aws-region: us-east-1
+      #########################################################
+      # tasks inside VM
+
+      - name: Delete allocated VM
+        run: |
+          python3 modules/allocation/main.py --action delete --provider aws --size large --composite-name linux-ubuntu-22.04-arm64
+     
+      - name: Kill VPN connection
+        if: always()
+        run: |
+          sudo killall openvpn
 
       - name: Upload package to S3
         run: |
