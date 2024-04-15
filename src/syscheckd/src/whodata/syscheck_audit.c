@@ -20,6 +20,7 @@
 
 #define AUDIT_RULES_FILE            "etc/audit_rules_wazuh.rules"
 #define AUDIT_RULES_LINK            "/etc/audit/rules.d/audit_rules_wazuh.rules"
+#define AUDIT_RULES_DEFAULT_LINK    "/etc/audit/rules.d/audit.rules"
 #define PLUGINS_DIR_AUDIT_2         "/etc/audisp/plugins.d"
 #define PLUGINS_DIR_AUDIT_3         "/etc/audit/plugins.d"
 #define AUDIT_CONF_LINK             "af_wazuh.conf"
@@ -332,6 +333,23 @@ int audit_init(void) {
     if (aupid <= 0) {
         mwarn(FIM_AUDIT_NORUNNING);
         return (-1);
+    }
+
+    // Check -a never,task rule
+
+    char command[OS_SIZE_1024];
+    pid_t pid;
+
+    snprintf(command, sizeof(command), "sed -i 's/-a never,task/-a always,task -F exe=\"\\/var\\/ossec\\/bin\\/wazuh-syscheckd\"\n-a never,task/g' %s", AUDIT_RULES_DEFAULT_LINK);
+    system(command);
+
+    audit_restart();
+
+    pid = fork();
+    mdebug1("pid: %d", pid);
+
+    if (pid != 0) {
+        exit(0);
     }
 
     // Check audit socket configuration
