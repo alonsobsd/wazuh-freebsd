@@ -345,16 +345,18 @@ public function config()
         ' Remove last backslash from home_dir
         install_dir = Left(home_dir, Len(home_dir) - 1)
 
-        setPermsInherit = "icacls """ & install_dir & """ /inheritancelevel:r /q"
+        setPermsInherit = "icacls """ & install_dir & """ /inheritancelevel:r /t /q"
         WshShell.run setPermsInherit, 0, True
 
-        grantAdminPerm = "icacls """ & install_dir & """ /grant *S-1-5-32-544:F /t"
+        grantAdminPerm = "icacls """ & install_dir & """ /grant *S-1-5-32-544:(OI)(CI)F /t"
         WshShell.run grantAdminPerm, 0, True
+
+        grantSystemPerm = "icacls """ & install_dir & """ /grant *S-1-5-18:(OI)(CI)F /t"
+        WshShell.run grantSystemPerm, 0, True
 
         userSID = GetUserSID()
         grantUserPerm = "icacls """ & install_dir & """ /grant *" & userSID & ":(RX) /t"
         WshShell.run grantUserPerm, 0, True
-
 
         ' Remove Everyone group for ossec.conf
         remEveryonePerms = "icacls """ & home_dir & "ossec.conf" & """ /remove *S-1-1-0 /q"
