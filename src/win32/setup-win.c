@@ -51,10 +51,14 @@ int main(int argc, char **argv)
         system(cmd);
 
         /* Change permissions */
+        system("echo y|icacls .  /inheritancelevel:r ");
 
-        system("echo y|icacls .  /inheritancelevel:d ");
-
-        system("echo y|icacls .  /remove  \"*S-1-5-32-545\" ");
+        /* Add Administrator permissions */
+        system("echo y|icacls . /grant \"*S-1-5-32-544:(OI)(CI)F\" ");
+        /* Add SYSTEM permissions */
+        system("echo y|icacls . /grant \"*S-1-5-18:(OI)(CI)F\" ");
+        /* Add user permissions*/
+        system("echo y|icacls . /grant \"*S-1-3-0:(RX) /t\" ");
 
         system("echo y|icacls ossec.conf  /remove  \"*S-1-1-0\" ");
 
