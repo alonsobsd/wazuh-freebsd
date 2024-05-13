@@ -136,6 +136,7 @@ function Get-AgentStatus {
 }
 
 $status = Get-AgentStatus
+$status = $null
 $counter = 30
 while($status -ne "connected"  -And $counter -gt 0)
 {
