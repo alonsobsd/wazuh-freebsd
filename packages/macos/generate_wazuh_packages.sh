@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -ex
 # Program to build and package OSX wazuh-agent
 # Wazuh package generator
 # Copyright (C) 2015, Wazuh Inc.
@@ -203,8 +203,13 @@ function build_package() {
         rm -rf "${DESTINATION}/symbols"
         sign_pkg
         if [[ "${CHECKSUM}" == "yes" ]]; then
+            echo "Testing checksum ############"
+            echo ${DESTINATION}/${pkg_name}.pkg
+            ls -la ${DESTINATION}/
+            shasum --version
             shasum -a512 "${DESTINATION}/${pkg_name}.pkg" > "${DESTINATION}/${pkg_name}.pkg.sha512"
             shasum -a512 "${DESTINATION}/${symbols_pkg_name}.zip" > "${DESTINATION}/${symbols_pkg_name}.sha512"
+            ls -la ${DESTINATION}/
         fi
         clean_and_exit 0
     else
