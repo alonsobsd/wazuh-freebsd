@@ -22,7 +22,7 @@ else
     exit 1
 fi
 
-if [ "${ARCH}" = "i386" ] || [ "${ARCH}" = "armv7hl" ]; then
+if [ "${ARCH}" = "i386" ] || [ "${ARCH}" = "armhl" ]; then
     linux="linux32"
 fi
 
