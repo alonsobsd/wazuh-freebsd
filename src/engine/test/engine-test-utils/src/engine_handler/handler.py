@@ -97,7 +97,7 @@ class EngineHandler:
             if error == None:
                 break
 
-            time.sleep(1)
+            time.sleep(5)
             current_attempt += 1
 
         if current_attempt == max_attempts:

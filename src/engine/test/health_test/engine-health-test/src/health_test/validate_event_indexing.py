@@ -13,6 +13,7 @@ import yaml
 from api_communication.proto import catalog_pb2 as api_catalog
 from api_communication.proto import engine_pb2 as api_engine
 from api_communication.proto import policy_pb2 as api_policy
+from api_communication.proto import tester_pb2 as api_tester
 from google.protobuf.json_format import ParseDict
 from health_test.utils import *
 
@@ -307,7 +308,7 @@ def run_all_tests(test_parent_paths: List[Path], engine_api_socket: str) -> Dict
             test_name = test_parent_name
             if input_file.parent != test_dir:
                 test_name = f"{test_parent_name}-{input_file.parent.name}"
-            engine_test_command = f"engine-test -c {engine_test_conf.resolve().as_posix()} run {test_name} --api-socket {engine_api_socket} -j"
+            engine_test_command = f"engine-test -c {engine_test_conf.resolve().as_posix()} run {test_name} -s default --api-socket {engine_api_socket} -j"
             command = f"cat {input_file.resolve().as_posix()} | {engine_test_command}"
 
             output = test(input_file, command)
@@ -509,6 +510,19 @@ def modify_core_wazuh_decoder(file_path: Path, add_hash: bool = True):
         yaml.dump(content, file, default_flow_style=False, sort_keys=False)
 
 
+def reload_session(engine_handler: EngineHandler) -> None:
+    # Reload session
+    request = api_tester.SessionReload_Request()
+    request.name = "default"
+    print(f"Reloading session...\n{request}")
+    error, response = engine_handler.api_client.send_recv(request)
+    if error:
+        sys.exit(error)
+    parsed_response = ParseDict(response, api_engine.GenericStatus_Response())
+    if parsed_response.status == api_engine.ERROR:
+        sys.exit(parsed_response.error)
+    print("Session reloaded.")
+
 def decoder_health_test(env_path: Path, integration_name: Optional[str] = None, skip: Optional[List[str]] = None):
     print("Validating environment...")
     conf_path = (env_path / "config.env").resolve()
@@ -561,6 +575,7 @@ def decoder_health_test(env_path: Path, integration_name: Optional[str] = None, 
             load_indexer_output_in_policy(engine_handler)
         modify_core_wazuh_decoder(CORE_WAZUH_DECODER_PATH)
         update_wazuh_core_message(CORE_WAZUH_DECODER_PATH, engine_handler)
+        reload_session(engine_handler)
 
         print("\n\nRunning tests...")
         results = run_test(integrations, engine_handler.api_socket_path)
@@ -572,6 +587,7 @@ def decoder_health_test(env_path: Path, integration_name: Optional[str] = None, 
         print("Restart wazuh-core-message decoder changes")
         modify_core_wazuh_decoder(CORE_WAZUH_DECODER_PATH, add_hash=False)
         update_wazuh_core_message(CORE_WAZUH_DECODER_PATH, engine_handler)
+        reload_session(engine_handler)
         engine_handler.stop()
         opensearch_management.stop()
         print("Engine stopped.")
@@ -643,6 +659,7 @@ def rule_health_test(env_path: Path, ruleset_name: Optional[str] = None, skip: O
         print("Update wazuh-core-message decoder")
         modify_core_wazuh_decoder(CORE_WAZUH_DECODER_PATH)
         update_wazuh_core_message(CORE_WAZUH_DECODER_PATH, engine_handler)
+        reload_session(engine_handler)
 
         print("\n\nRunning tests...")
         results = run_test(rules, engine_handler.api_socket_path)
@@ -654,6 +671,7 @@ def rule_health_test(env_path: Path, ruleset_name: Optional[str] = None, skip: O
         print("Restart wazuh-core-message decoder changes")
         modify_core_wazuh_decoder(CORE_WAZUH_DECODER_PATH, add_hash=False)
         update_wazuh_core_message(CORE_WAZUH_DECODER_PATH, engine_handler)
+        reload_session(engine_handler)
         engine_handler.stop()
         opensearch_management.stop()
         # Restore level log

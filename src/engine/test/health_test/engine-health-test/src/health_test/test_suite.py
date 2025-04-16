@@ -188,14 +188,13 @@ def run_test(test_parent_path: Path, engine_api_socket: str, unit_result: type, 
 
         ns = "wazuh system" if target == 'rule' else "wazuh"
         engine_test_command = f"engine-test -c {engine_test_conf.resolve().as_posix()} "
-        engine_test_command += f"run {test_name} --api-socket {engine_api_socket} -n {ns} {debug_mode} -j"
+        engine_test_command += f"run {test_name} -s default --api-socket {engine_api_socket} -n {ns} {debug_mode} -j"
         command = f"cat {input_file.resolve().as_posix()} | {engine_test_command}"
         test_result = test(input_file, expected_file,
                            unit_result, command, target, help)
         result.add_result(test_result)
 
     return result
-
 
 def decoder_health_test(env_path: Path, unit_result: type, debug_mode: str, integration_name: Optional[str] = None, skip: Optional[List[str]] = None):
     print("Validating environment...")

@@ -69,3 +69,5 @@ _deps
 
 # Vcpkg
 vcpkg/*
+
+/venv
