@@ -17,9 +17,21 @@
 #include "sqlite_dbengine.h"
 #include "stringHelper.h"
 #include "commonDefs.h"
+#include <iostream>
 
 using namespace std::chrono_literals;
 auto constexpr MAX_TRIES = 5;
+
+auto logToFile = [](const std::string& filename = "/tmp/sqlite_dbengine.log", const std::string& level = "DEBUG", const std::string& message) {
+    std::ofstream logFile(filename, std::ios::app); // Open file in append mode
+    if (logFile.is_open()) {
+        logFile << "[" << level << "] " << message << std::endl;
+        logFile.close();
+    } else {
+        std::cerr << "Error: Unable to open log file: " << filename << std::endl;
+    }
+};
+
 
 SQLiteDBEngine::SQLiteDBEngine(const std::shared_ptr<ISQLiteFactory>& sqliteFactory,
                                const std::string&                     path,
@@ -88,6 +100,10 @@ void SQLiteDBEngine::setMaxRows(const std::string& table,
 void SQLiteDBEngine::bulkInsert(const std::string& table,
                                 const nlohmann::json& data)
 {
+
+    std::string jsonString = data.dump();
+
+    logToFile("/tmp/sqlite_dbengine.log", "BulkInsert", jsonString);
     if (0 != loadTableData(table))
     {
         const auto& tableFieldsMetaData { m_tableFields[table] };
@@ -162,6 +178,10 @@ void SQLiteDBEngine::syncTableRowData(const nlohmann::json& jsInput,
     auto it { jsInput.find("options") };
     auto returnOldData { false };
     nlohmann::json ignoredColumns { };
+
+    std::string jsonString = jsInput.dump();
+    logToFile("/tmp/sqlite_dbengine.log", "SyncTableRowData", jsonString);
+
 
     if (jsInput.end() != it)
     {
@@ -663,7 +683,10 @@ void SQLiteDBEngine::insertElement(const std::string& table,
 {
     const auto stmt { getStatement(buildInsertDataSqlQuery(table, element)) };
     int32_t index { 1l };
-
+    
+    std::string jsonString = element.dump();
+    logToFile("/tmp/sqlite_dbengine.log", "InsertElement", jsonString);
+    
     for (const auto& field : tableFieldsMetaData)
     {
         if (bindJsonData(stmt, field, element, index))
@@ -738,6 +761,10 @@ std::string SQLiteDBEngine::buildInsertDataSqlQuery(const std::string& table,
         sql = sql.substr(0, sql.size() - 1);
         // Finish the statement
         binds.append(");");
+
+        
+        logToFile("/tmp/sqlite_dbengine.log", "Query: ", binds);
+
         // Complete the statement
         sql.append(binds);
     }
@@ -830,14 +857,15 @@ bool SQLiteDBEngine::bindJsonData(const std::shared_ptr<SQLite::IStatement> stmt
             stmt->bind(cid, value);
         }
         else if (ColumnType::Integer == type)
-        {
-            int32_t value
+        {  
+            int64_t value
             {
-                jsData.is_number() ? jsData.get<int32_t>() : jsData.is_string()
+                jsData.is_number() ? jsData.get<int64_t>() : jsData.is_string()
                 && jsData.get_ref<const std::string&>().size()
                 ? std::stoi(jsData.get_ref<const std::string&>())
                 : 0
             };
+            logToFile("/tmp/bind_json_data.log", "Integer", std::to_string(value));
             stmt->bind(cid, value);
         }
         else if (ColumnType::Text == type)
@@ -1496,6 +1524,7 @@ bool SQLiteDBEngine::insertNewRows(const std::string& table,
             if (callback)
             {
                 lock.unlock();
+                logToFile("/tmp/sqlite_dbengine.log", "InsertNewRows", object.dump());
                 callback(ReturnTypeCallback::INSERTED, object);
                 lock.lock();
             }

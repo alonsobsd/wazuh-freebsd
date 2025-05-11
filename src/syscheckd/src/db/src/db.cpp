@@ -23,6 +23,23 @@
 #include "stringHelper.h"
 #include "cjsonSmartDeleter.hpp"
 
+
+
+#include <fstream>
+#include <iostream>
+
+
+auto logToFile = [](const std::string& filename = "/tmp/sqlite_dbengine.log", const std::string& level = "DEBUG", const std::string& message) {
+    std::ofstream logFile(filename, std::ios::app); // Open file in append mode
+    if (logFile.is_open()) {
+        logFile << "[" << level << "] " << message << std::endl;
+        logFile.close();
+    } else {
+        std::cerr << "Error: Unable to open log file: " << filename << std::endl;
+    }
+};
+
+
 void DB::init(const int storage,
               const int syncInterval,
               const uint32_t syncMaxInterval,
@@ -368,6 +385,8 @@ FIMDBErrorCode fim_db_transaction_sync_row(TXN_HANDLE txn_handler, const fim_ent
             {
                 cJSON_Parse((*syncItem->toJSON()).dump().c_str())
             };
+            std::string jsonString = (*syncItem->toJSON()).dump();
+            logToFile("/tmp/db.log", "fimdbTransactionSyncRow", jsonString);
 
             if (dbsync_sync_txn_row(txn_handler, jsInput.get()) == 0)
             {

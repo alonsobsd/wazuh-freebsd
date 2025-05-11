@@ -847,6 +847,8 @@ void fim_event_callback(void* data, void * ctx)
 
         path = cJSON_GetStringValue(cJSON_GetObjectItem(data_json, "path"));
 
+        minfo("##### Debug json_event in fim_event_call: '%s'", cJSON_Print(data_json));
+
         cJSON *changed_attributes = cJSON_GetObjectItem(data_json, "changed_attributes");
         if (changed_attributes && cJSON_GetArraySize(changed_attributes) == 0) {
             mdebug2(FIM_EMPTY_CHANGED_ATTRIBUTES, path);
@@ -1350,6 +1352,9 @@ fim_file_data *fim_get_data(const char *file, const directory_t *configuration, 
     }
 
     data->inode = statbuf->st_ino;
+    // minfo("Harcode value: %llu by 2266849930", data->inode);
+    // data->inode = 2266849930;
+
     data->dev = statbuf->st_dev;
     data->options = configuration->options;
     data->last_event = time(NULL);

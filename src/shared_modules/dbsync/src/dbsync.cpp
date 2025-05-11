@@ -17,9 +17,26 @@
 #include "dbsyncPipelineFactory.h"
 #include "cjsonSmartDeleter.hpp"
 
+
+
+#include <fstream>
+#include <iostream>
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+auto logToFile = [](const std::string& filename = "/tmp/sqlite_dbengine.log", const std::string& level = "DEBUG", const std::string& message) {
+    std::ofstream logFile(filename, std::ios::app); // Open file in append mode
+    if (logFile.is_open()) {
+        logFile << "[" << level << "] " << message << std::endl;
+        logFile.close();
+    } else {
+        std::cerr << "Error: Unable to open log file: " << filename << std::endl;
+    }
+};
+
 
 using namespace DbSync;
 
@@ -204,6 +221,12 @@ int dbsync_sync_txn_row(const TXN_HANDLE txn,
         {
             const std::unique_ptr<char, CJsonSmartFree> spJsonBytes{cJSON_PrintUnformatted(js_input)};
             PipelineFactory::instance().pipeline(txn)->syncRow(nlohmann::json::parse(spJsonBytes.get()));
+            
+            nlohmann::json json = nlohmann::json::parse(spJsonBytes.get());
+
+            std::string jsonString = json.dump();
+            logToFile("/tmp/db.log", "fimdbTransactionSyncRow", jsonString);
+
             retVal = 0;
         }
         catch (const DbSync::dbsync_error& ex)

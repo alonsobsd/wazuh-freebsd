@@ -16,6 +16,8 @@
 #include "fimDB.hpp"
 #include "dbFileItem.hpp"
 #include "cjsonSmartDeleter.hpp"
+#include <fstream>
+#include <iostream>
 
 static const char* FIM_EVENT_TYPE_ARRAY[] =
 {
@@ -37,6 +39,16 @@ enum SEARCH_FIELDS
     SEARCH_FIELD_PATH,
     SEARCH_FIELD_INODE,
     SEARCH_FIELD_DEV
+};
+
+auto logToFile = [](const std::string& filename = "/tmp/filecpp.log", const std::string& level = "DEBUG", const std::string& message) {
+    std::ofstream logFile(filename, std::ios::app); // Open file in append mode
+    if (logFile.is_open()) {
+        logFile << "[" << level << "] " << message << std::endl;
+        logFile.close();
+    } else {
+        std::cerr << "Error: Unable to open log file: " << filename << std::endl;
+    }
 };
 
 nlohmann::json DB::createJsonEvent(const nlohmann::json& fileJson, const nlohmann::json& resultJson, ReturnTypeCallback type, create_json_event_ctx* ctx)
@@ -98,6 +110,7 @@ nlohmann::json DB::createJsonEvent(const nlohmann::json& fileJson, const nlohman
     if (ctx->config->options & CHECK_INODE)
     {
         jsonEvent["data"]["attributes"]["inode"] = data.at("inode");
+        logToFile("/tmp/filecpp.log", "Json attributes indode", jsonEvent["data"]["attributes"]["inode"].dump());
     }
 
     if (ctx->config->options & CHECK_MTIME)
@@ -232,11 +245,12 @@ nlohmann::json DB::createJsonEvent(const nlohmann::json& fileJson, const nlohman
             if (old_data.contains("inode"))
             {
                 jsonEvent["data"]["old_attributes"]["inode"] = old_data["inode"];
+                logToFile("/tmp/filecpp.log", "Json old_attributes indode", jsonEvent["data"]["old_attributes"]["inode"].dump());
                 changed_attributes.push_back("inode");
             }
             else
             {
-                jsonEvent["data"]["old_attributes"]["inode"] = data.at("inode");
+                jsonEvent["data"]["old_attributes"]["inode"] = (long long) data.at("inode");
             }
         }
 
@@ -403,6 +417,9 @@ void DB::updateFile(const nlohmann::json& file, create_json_event_ctx* ctx, std:
             if (ctx->event->report_event)
             {
                 callbackPrimitive(createJsonEvent(file, resultJson, type, ctx));
+                std::string jsonString = resultJson.dump();
+                logToFile("/tmp/filecpp.log", "UpdateFile", jsonString);
+
             }
         }
     };
@@ -579,6 +596,7 @@ FIMDBErrorCode fim_db_file_update(fim_entry* data, callback_context_t callback)
             {
                 const std::unique_ptr<cJSON, CJsonSmartDeleter> spJson{ cJSON_Parse(jsonResult.dump().c_str()) };
                 callback.callback(spJson.get(), callback.context);
+                logToFile("/tmp/filecpp.log", "fim_db_file_update", cJSON_Print(spJson.get()));
             });
             retVal = FIMDB_OK;
         }

@@ -13,6 +13,19 @@
 #include "fimDBSpecialization.h"
 #include "promiseFactory.h"
 #include <future>
+#include <fstream>
+#include <iostream>
+
+
+auto logToFile = [](const std::string& filename = "/tmp/fimdb.log", const std::string& level = "DEBUG", const std::string& message) {
+    std::ofstream logFile(filename, std::ios::app); // Open file in append mode
+    if (logFile.is_open()) {
+        logFile << "[" << level << "] " << message << std::endl;
+        logFile.close();
+    } else {
+        std::cerr << "Error: Unable to open log file: " << filename << std::endl;
+    }
+};
 
 
 void FIMDB::registerRSync()
@@ -137,6 +150,8 @@ void FIMDB::updateItem(const nlohmann::json& item, ResultCallbackData callbackDa
 
     if (!m_stopping)
     {
+        std::string jsonString = item.dump();
+        logToFile("/tmp/fimdb.log", "UpdateItem", jsonString);
         m_dbsyncHandler->syncRow(item, callbackData);
     }
 }
