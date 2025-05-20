@@ -125,15 +125,6 @@ void AgentdStart(int uid, int gid, const char *user, const char *group)
         maxfd = agt->sock;
     }
 
-    /* Connect to the execd queue */
-    if (agt->execdq == 0) {
-        if ((agt->execdq = StartMQ(EXECQUEUE, WRITE, 1)) < 0) {
-            minfo("Unable to connect to the active response "
-                   "queue (disabled).");
-            agt->execdq = -1;
-        }
-    }
-
     start_agent(1);
 
     os_delwait();
@@ -182,6 +173,15 @@ void AgentdStart(int uid, int gid, const char *user, const char *group)
             merror_exit(SELECT_ERROR, errno, strerror(errno));
         } else if (rc == 0) {
             continue;
+        }
+
+        /* Connect to the execd queue */
+        if (agt->execdq == 0) {
+            if ((agt->execdq = StartMQ(EXECQUEUE, WRITE, 1)) < 0) {
+                minfo("Unable to connect to the active response "
+                        "queue (disabled).");
+                agt->execdq = -1;
+            }
         }
 
         /* For the receiver */
