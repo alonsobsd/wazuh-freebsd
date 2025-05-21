@@ -109,6 +109,8 @@ int receive_msg()
                 if (agt->execdq >= 0) {
                     if (OS_SendUnix(agt->execdq, tmp_msg, 0) < 0) {
                         merror("Error communicating with execd");
+                        close(agt->execdq);
+                        agt->execdq=-1;
                     }
                 }
 #else
