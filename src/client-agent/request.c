@@ -201,7 +201,7 @@ int req_push(char * buffer, size_t length) {
         case 2:
             w_mutex_lock(&mutex_pool);
 
-            if (buffer_is_full()) {
+            if (full(pool_i, pool_j, request_pool)) {
                 merror("Too many requests. Rejecting counter %s.", counter);
                 w_mutex_unlock(&mutex_pool);
 
@@ -216,7 +216,7 @@ int req_push(char * buffer, size_t length) {
                 return -1;
             } else {
                 req_pool[pool_i] = node;
-                forward(&pool_i, request_pool);
+                forward(pool_i, request_pool);
                 w_cond_signal(&pool_available);
             }
 
@@ -247,7 +247,7 @@ void * req_receiver(__attribute__((unused)) void * arg) {
 
         w_mutex_lock(&mutex_pool);
 
-        while (buffer_is_empty()) {
+        while (empty(pool_i, pool_j)) {
             w_cond_wait(&pool_available, &mutex_pool);
         }
 

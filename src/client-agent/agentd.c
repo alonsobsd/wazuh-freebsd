@@ -12,6 +12,14 @@
 #include "agentd.h"
 #include "os_net/os_net.h"
 
+bool needs_config_reload = false;
+void handler(int signum) {
+    if (signum == SIGHUP){
+        minfo("SIGNAL [(%d)-(%s)] Received. Reload agend.", signum, strsignal(signum));
+        needs_config_reload = true;
+    }
+}
+
 /* Start the agent daemon */
 void AgentdStart(int uid, int gid, const char *user, const char *group)
 {
@@ -100,6 +108,10 @@ void AgentdStart(int uid, int gid, const char *user, const char *group)
     /* Ignore SIGPIPE, it will be detected on recv */
     signal(SIGPIPE, SIG_IGN);
 
+    /* Config SIGHUP as reload signal */
+    struct sigaction action = { .sa_handler = handler, .sa_flags = SA_RESTART };
+    sigaction(SIGHUP, &action, NULL);
+
     /* Launch rotation thread */
     rotate_log = getDefine_Int("monitord", "rotate_log", 0, 1);
     if (rotate_log) {
@@ -168,11 +180,55 @@ void AgentdStart(int uid, int gid, const char *user, const char *group)
         fdtimeout.tv_usec = 0;
 
         /* Wait with a timeout for any descriptor */
-        rc = select(maxfd, &fdset, NULL, NULL, &fdtimeout);
+        do{
+            rc = select(maxfd, &fdset, NULL, NULL, &fdtimeout);
+        } while (rc < 0 && errno == EINTR);
+
         if (rc == -1) {
             merror_exit(SELECT_ERROR, errno, strerror(errno));
         } else if (rc == 0) {
             continue;
+        }
+
+        /* Check the flag for pending configuration reload */
+        if (needs_config_reload){
+            needs_config_reload = false;
+
+            // Clean execdq
+            close(agt->execdq);
+            agt->execdq=-1;
+
+            // Update buffer configuration
+            const char *cfg = OSSECCONF;
+            unsigned int current_capacity = agt->buflength;
+            int current_buffer_flag = agt->buffer;
+
+            mdebug2("Buffer pre-update, enable: %i size: %i ", agt->buffer, current_capacity);
+            if (ReadConfig(CBUFFER, cfg, NULL, agt) < 0) {
+                mlerror_exit(LOGLEVEL_ERROR, CLIENT_ERROR);
+            }
+            #ifdef CLIENT
+            if(agt->flags.remote_conf) {
+                ReadConfig(CBUFFER | CAGENT_CONFIG, AGENTCONFIG, NULL, agt);
+                minfo("Buffer agent.conf updated, enable: %i size: %i ", agt->buffer, agt->buflength);
+            }
+            #endif
+
+            //  Buffer was enabled, needs to be disabled
+            if(agt->buffer == 0 && current_buffer_flag != 0) {
+                w_agentd_free_buffer(current_capacity);
+            }else if (current_buffer_flag == 0 && agt->buffer != 0)
+            {
+                // Buffer was disabled, needs to be enabled
+                buffer_init();
+                w_create_thread(dispatch_buffer, (void *)NULL);
+            }else
+            {
+                // Buffer was enabled, stays enabled (potential resize)
+                resize_internal_buffer(current_capacity, agt->buflength);
+            }
+
+            mdebug2("Buffer updated, enable: %i size: %i ", agt->buffer, agt->buflength);
         }
 
         /* Connect to the execd queue */

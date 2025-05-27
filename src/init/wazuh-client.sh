@@ -315,6 +315,9 @@ restart)
 reload)
     DAEMONS=$(echo $DAEMONS | sed 's/wazuh-agentd//')
     restart_service
+    # Restart execd conection
+    pid=`cat ${DIR}/var/run/wazuh-agentd-*.pid`
+    kill -HUP $pid
     ;;
 status)
     lock

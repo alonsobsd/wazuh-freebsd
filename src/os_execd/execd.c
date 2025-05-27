@@ -242,6 +242,7 @@ void ExecdRun(char *exec_msg, int *childcount)
         char *cmd_api[MAX_ARGS] = {0};
 
         cJSON_Delete(json_root);
+
         os_strdup("active-response/bin/restart.sh", cmd_api[0]);
 
     #ifdef CLIENT
