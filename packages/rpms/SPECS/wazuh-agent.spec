@@ -600,6 +600,14 @@ fi
 
 # posttrans code is the last thing executed in a install/upgrade
 %posttrans
+
+cp %{_localstatedir}/etc/ossec.conf %{_localstatedir}/etc/ossec.conf.new_filter_journald
+sed -i '/<localfile>/,/<\/localfile>/{
+  /<localfile>/{ N
+  /<log_format>journald<\/log_format>/{ N
+  /<location>journald<\/location>/{ N
+  /<\/localfile>/d } } } }' %{_localstatedir}/etc/ossec.conf
+
 if [ -f %{_sysconfdir}/systemd/system/wazuh-agent.service ]; then
   rm -rf %{_sysconfdir}/systemd/system/wazuh-agent.service
   systemctl daemon-reload > /dev/null 2>&1

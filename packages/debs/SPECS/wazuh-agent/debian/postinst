@@ -2,7 +2,7 @@
 # postinst script for wazuh-agent
 # Wazuh, Inc 2015
 
-set -e
+set -ex
 
 case "$1" in
     configure)
@@ -162,6 +162,13 @@ case "$1" in
 
     find ${DIR} -nogroup -exec chgrp ${GROUP} {} \; > /dev/null 2>&1
     find ${DIR} -nouser -exec chown ${USER} {} \; > /dev/null 2>&1
+
+    cp ${DIR}/etc/ossec.conf ${DIR}/etc/ossec.conf.new_filter_journald
+    sed -i '/<localfile>/,/<\/localfile>/{
+  /<localfile>/{ N
+  /<log_format>journald<\/log_format>/{ N
+  /<location>journald<\/location>/{ N
+  /<\/localfile>/d } } } }' ${DIR}/etc/ossec.conf
 
     if [ ! -z "$2" ]; then
         if [ -f ${WAZUH_TMP_DIR}/wazuh.restart ] ; then
