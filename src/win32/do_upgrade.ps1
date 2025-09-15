@@ -51,7 +51,7 @@ function get-version {
 
 
 function remove_upgrade_files {
-    Remove-Item -Path ".\upgrade\*"  -Exclude "*.log", "upgrade_result" -ErrorAction SilentlyContinue
+    # Remove-Item -Path ".\upgrade\*"  -Exclude "*.log", "upgrade_result" -ErrorAction SilentlyContinue
     Remove-Item -Path ".\wazuh-agent*.msi" -ErrorAction SilentlyContinue
     Remove-Item -Path ".\do_upgrade.ps1" -ErrorAction SilentlyContinue
 }
@@ -175,9 +175,16 @@ function Get-MSIProductVersion {
 function install {
     $major = $current_version.Split('.')[0]
     # Remove old databases if upgrading from 4.X to 5.X
+    write-output "major: $($major)." >> .\upgrade\upgrade.log
     if ($major -eq 4) {
-        Remove-Item -Path ".\queue\syscollector\db\local.db" -ErrorAction SilentlyContinue
-        Remove-Item -Path ".\queue\fim\db\fim.db" -ErrorAction SilentlyContinue
+        try {
+            Remove-Item -Path ".\queue\syscollector\db\local.db" -ErrorAction SilentlyContinue
+            Remove-Item -Path ".\queue\fim\db\fim.db" -ErrorAction SilentlyContinue
+            write-output "removed" >> .\upgrade\upgrade.log
+        }
+        catch {
+            write-output "not removed" >> .\upgrade\upgrade.log
+        }
     }
 
     kill -processname win32ui -ErrorAction SilentlyContinue -Force
