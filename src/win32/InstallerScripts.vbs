@@ -441,3 +441,52 @@ Public Function CreateDumpRegistryKey()
 
     CreateDumpRegistryKey = 0
 End Function
+
+Public Function CleanDatabasesForMajorUpgrade()
+    On Error Resume Next
+
+    ' Get parameters from the custom action
+    strArgs = Session.Property("CustomActionData")
+    args = Split(strArgs, "/+/")
+
+    home_dir = Replace(args(0), Chr(34), "")
+    previous_version = Replace(args(1), Chr(34), "")
+
+    Set objFSO = CreateObject("Scripting.FileSystemObject")
+
+    ' Check if the previous version is < 5.0
+    If previous_version <> "" And IsVersionLessThan5(previous_version) Then
+        ' Database paths to remove
+        local_db_path = home_dir & "queue\syscollector\db\local.db"
+        fim_db_path = home_dir & "queue\fim\db\fim.db"
+
+        ' Remove local.db if it exists
+        If objFSO.FileExists(local_db_path) Then
+            objFSO.DeleteFile local_db_path, True
+        End If
+
+        ' Remove fim.db if it exists
+        If objFSO.FileExists(fim_db_path) Then
+            objFSO.DeleteFile fim_db_path, True
+        End If
+    End If
+
+    CleanDatabasesForMajorUpgrade = 0
+End Function
+
+Private Function IsVersionLessThan5(version_string)
+    On Error Resume Next
+    ' Extract the major version number
+    If InStr(version_string, ".") > 0 Then
+        major_version = CInt(Left(version_string, InStr(version_string, ".") - 1))
+        IsVersionLessThan5 = (major_version < 5)
+    Else
+        ' If no dot found, try to parse as integer
+        major_version = CInt(version_string)
+        If Err.Number = 0 Then
+            IsVersionLessThan5 = (major_version < 5)
+        Else
+            IsVersionLessThan5 = False
+        End If
+    End If
+End Function

@@ -57,6 +57,11 @@
             <RegistrySearch Id="BuildVersion" Root="HKLM" Key="SOFTWARE\Microsoft\Windows NT\CurrentVersion" Type="raw" Name="CurrentBuild" />
         </Property>
 
+        <!-- Detect previously installed Wazuh version -->
+        <Property Id="PREVIOUS_VERSION">
+            <RegistrySearch Id="PreviousWazuhVersion" Root="HKLM" Key="SOFTWARE\Wazuh, Inc.\Wazuh Agent" Type="raw" Name="Version" />
+        </Property>
+
         <Binary Id="InstallerScripts" SourceFile="InstallerScripts.vbs" />
 
         <Property Id="APPLICATIONFOLDER">
@@ -116,6 +121,10 @@
         <CustomAction Id="SetCustomActionDataForSetWazuhPermissions" Return="check" Property="SetWazuhPermissions" Value="&quot;[APPLICATIONFOLDER]&quot;" />
         <CustomAction Id="CustomAction_InstallerScripts" BinaryKey="InstallerScripts" VBScriptCall="config" Return="check" Execute="commit" Impersonate="no"/>
         <CustomAction Id="SetWazuhPermissions" BinaryKey="InstallerScripts" VBScriptCall="SetWazuhPermissions" Return="check" Execute="commit" Impersonate="no"/>
+
+        <!-- Database cleanup for major upgrades (4.x to 5.x) -->
+        <CustomAction Id="SetCustomActionDataForCleanDB" Return="check" Property="CleanDatabasesForMajorUpgrade" Value="&quot;[APPLICATIONFOLDER]&quot;/+/&quot;[PREVIOUS_VERSION]&quot;" />
+        <CustomAction Id="CleanDatabasesForMajorUpgrade" BinaryKey="InstallerScripts" VBScriptCall="CleanDatabasesForMajorUpgrade" Return="check" Execute="deferred" Impersonate="no"/>
 
         <!-- Explicitely stopping and deleting the OSSEC service to install new Wazuh service -->
         <CustomAction Id="StopOssecService" Directory="APPLICATIONFOLDER" ExeCommand="NET STOP OssecSvc" Execute="deferred" Impersonate="no" Return="ignore" />
@@ -179,6 +188,10 @@
             <!-- Set Wazuh permissions on upgrade -->
             <Custom Action="SetCustomActionDataForSetWazuhPermissions" After="InstallInitialize">(WIX_UPGRADE_DETECTED) OR (PATCH)</Custom>
             <Custom Action="SetWazuhPermissions" After="SetCustomActionDataForSetWazuhPermissions">(WIX_UPGRADE_DETECTED) OR (PATCH)</Custom>
+
+            <!-- Clean databases for major upgrade (4.x to 5.x) -->
+            <Custom Action="SetCustomActionDataForCleanDB" After="SetWazuhPermissions">WIX_UPGRADE_DETECTED AND PREVIOUS_VERSION AND NOT PATCH</Custom>
+            <Custom Action="CleanDatabasesForMajorUpgrade" After="SetCustomActionDataForCleanDB">WIX_UPGRADE_DETECTED AND PREVIOUS_VERSION AND NOT PATCH</Custom>
 
             <!-- Start services if necessary -->
             <Custom Action="StartWazuhSvc" After="InstallFinalize">((WIX_UPGRADE_DETECTED) OR (PATCH)) AND ((OSSECRUNNING = "Running") OR (WAZUHRUNNING = "Running"))</Custom>
