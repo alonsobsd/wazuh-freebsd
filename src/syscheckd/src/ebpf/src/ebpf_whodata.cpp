@@ -21,6 +21,7 @@
 #include <thread>
 #include <bounded_queue.hpp>
 #include <functional>
+#include <time.h>
 
 #include "ebpf_whodata.hpp"
 #include "bpf_helpers.h"
@@ -62,6 +63,9 @@ int handle_event(void* ctx, void* data, size_t data_sz) {
     if (!logFn || !confFn) {
         return 0;
     }
+    char error_message[256];
+    snprintf(error_message, sizeof(error_message), "triggered, filename: %s $$$ comm: %s", e->filename, e->comm);
+    logFn(LOG_ERROR, error_message);
 
     directory_t* config = confFn(e->filename);
     if (config && (config->options & WHODATA_ACTIVE)) {
@@ -92,7 +96,11 @@ int handle_event(void* ctx, void* data, size_t data_sz) {
 /* Callback for healthcheck */
 int healthcheck_event(void* ctx, void* data, size_t data_sz) {
     (void)ctx; (void)data_sz;
+    auto logFn = fimebpf::instance().m_loggingFunction;
     file_event* e = static_cast<file_event*>(data);
+    char error_message[256];
+    snprintf(error_message, sizeof(error_message), "triggered, filename: %s $$$ comm: %s", e->filename, e->comm);
+    logFn(LOG_ERROR, error_message);
 
     if (strstr(e->filename, EBPF_HC_FILE)) {
         event_received = true;
@@ -368,6 +376,7 @@ int ebpf_whodata_healthcheck() {
 
     time_t start_time = w_time(nullptr);
     while (!event_received) {
+        sleep(5);
         int ret = bpf_helpers->ring_buffer_poll(rb, WAIT_MS);
         if (ret < 0) {
             logFn(LOG_ERROR, FIM_ERROR_EBPF_RINGBUFF_CONSUME);
