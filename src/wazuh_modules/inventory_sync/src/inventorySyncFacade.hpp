@@ -267,7 +267,7 @@ class InventorySyncFacadeImpl final
 
     std::string calculateChecksumOfChecksums(const std::string& index, const std::string& agentId)
     {
-        std::string concatenatedChecksums;
+        std::vector<std::string> checksums;
         std::string searchAfter;
         constexpr size_t BATCH_SIZE = 1000;
         size_t totalDocs = 0;
@@ -307,7 +307,7 @@ class InventorySyncFacadeImpl final
                 if (hit.contains("_source") && hit["_source"].contains("checksum") &&
                     hit["_source"]["checksum"].contains("hash") && hit["_source"]["checksum"]["hash"].contains("sha1"))
                 {
-                    concatenatedChecksums += hit["_source"]["checksum"]["hash"]["sha1"].template get<std::string>();
+                    checksums.push_back(hit["_source"]["checksum"]["hash"]["sha1"].template get<std::string>());
                 }
 
                 if (hit.contains("sort") && !hit["sort"].empty())
@@ -325,6 +325,28 @@ class InventorySyncFacadeImpl final
         }
 
         logDebug2(LOGGER_DEFAULT_TAG, "Retrieved %zu documents for checksum calculation", totalDocs);
+
+        // Debug: Log first/last checksums
+        if (!checksums.empty()) {
+            logInfo(LOGGER_DEFAULT_TAG, "Manager: First checksum: %s", checksums.front().c_str());
+            logInfo(LOGGER_DEFAULT_TAG, "Manager: Last checksum: %s", checksums.back().c_str());
+        }
+
+        std::string concatenatedChecksums;
+        size_t totalSize = 0;
+        for (const auto& checksum : checksums)
+        {
+            totalSize += checksum.length();
+        }
+        concatenatedChecksums.reserve(totalSize);
+
+        for (const auto& checksum : checksums)
+        {
+            concatenatedChecksums += checksum;
+        }
+
+        // Debug: Log concatenated length
+        logInfo(LOGGER_DEFAULT_TAG, "Manager: Concatenated length: %zu bytes", concatenatedChecksums.length());
 
         Utils::HashData hash(Utils::HashType::Sha1);
         hash.update(concatenatedChecksums.c_str(), concatenatedChecksums.length());

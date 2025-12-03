@@ -89,13 +89,13 @@ int DB::countEntries(const std::string& tableName, const COUNT_SELECT_TYPE selec
 
 std::string DB::getConcatenatedChecksums(const std::string& tableName)
 {
-    std::string concatenatedChecksums;
+    std::vector<std::string> checksums;
 
-    auto callback {[&concatenatedChecksums](ReturnTypeCallback type, const nlohmann::json & jsonResult)
+    auto callback {[&checksums](ReturnTypeCallback type, const nlohmann::json & jsonResult)
     {
         if (ReturnTypeCallback::SELECTED == type)
         {
-            concatenatedChecksums += jsonResult.at("checksum").get<std::string>();
+            checksums.push_back(jsonResult.at("checksum").get<std::string>());
         }
     }};
 
@@ -108,6 +108,30 @@ std::string DB::getConcatenatedChecksums(const std::string& tableName)
                       .build()};
 
     FIMDB::instance().executeQuery(selectQuery.query(), callback);
+
+    // Debug: Log checksum count and first/last checksums
+    FIMDB::instance().logFunction(LOG_INFO,
+        std::string("Agent DB: Retrieved ") + std::to_string(checksums.size()) + " checksums from table: " + tableName);
+
+    if (!checksums.empty()) {
+        FIMDB::instance().logFunction(LOG_INFO,
+            std::string("Agent DB: First checksum: ") + checksums.front());
+        FIMDB::instance().logFunction(LOG_INFO,
+            std::string("Agent DB: Last checksum: ") + checksums.back());
+    }
+
+    std::string concatenatedChecksums;
+    size_t totalSize = 0;
+    for (const auto& checksum : checksums)
+    {
+        totalSize += checksum.length();
+    }
+    concatenatedChecksums.reserve(totalSize);
+
+    for (const auto& checksum : checksums)
+    {
+        concatenatedChecksums += checksum;
+    }
 
     return concatenatedChecksums;
 }
@@ -125,6 +149,11 @@ std::string DB::calculateTableChecksum(const char* table_name)
         hash.update(concatenated_checksums.c_str(), concatenated_checksums.length());
         const std::vector<unsigned char> hashResult = hash.hash();
         final_checksum = Utils::asciiToHex(hashResult);
+
+        // Debug: Log the final checksum and concatenated length
+        FIMDB::instance().logFunction(LOG_INFO,
+            std::string("Agent DB: Concatenated length: ") + std::to_string(concatenated_checksums.length()) +
+            " bytes, Final checksum: " + final_checksum);
     }
     // LCOV_EXCL_START
     catch (const std::exception& e)

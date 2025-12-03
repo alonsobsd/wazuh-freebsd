@@ -690,6 +690,7 @@ void * fim_run_integrity(__attribute__((unused)) void * args) {
             }
         } else {
             // Lock FIM's scheduled and realtime scans during sync and recovery process
+            mdebug1("Waiting for locks");
             w_mutex_lock(&syscheck.fim_scan_mutex);
             w_mutex_lock(&syscheck.fim_realtime_mutex);
             #ifdef WIN32
@@ -704,15 +705,16 @@ void * fim_run_integrity(__attribute__((unused)) void * args) {
 
                 for (int i = 0; i < table_count; i++) {
                     if (fim_recovery_integrity_interval_has_elapsed(table_names[i], syscheck.integrity_interval)) {
-                        w_rwlock_rdlock(&syscheck.directories_lock); // Lock the directories list since it will be traversed while persisting the table in memory
+                        //w_rwlock_rdlock(&syscheck.directories_lock); // Lock the directories list since it will be traversed while persisting the table in memory
                         mdebug1("Starting integrity validation process for %s", table_names[i]);
                         bool full_sync_required = fim_recovery_check_if_full_sync_required(table_names[i],
                                                                                            syscheck.sync_handle);
-                        if (full_sync_required) {
+                        //if (full_sync_required) {
+                        if (1) {
                             fim_recovery_persist_table_and_resync(table_names[i],
                                                                   syscheck.sync_handle);
                         }
-                        w_rwlock_unlock(&syscheck.directories_lock);
+                        //w_rwlock_unlock(&syscheck.directories_lock);
                         // Update the last sync time regardless of whether full sync was required
                         // This ensures the integrity check doesn't run again until integrity_interval has elapsed
                         fim_db_update_last_sync_time(table_names[i]);

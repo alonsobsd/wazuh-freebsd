@@ -184,6 +184,7 @@ void fim_recovery_persist_table_and_resync(char* table_name, AgentSyncProtocolHa
         if (stateful_event) {
             char* stateful_event_str = cJSON_PrintUnformatted(stateful_event);
             if (stateful_event_str) {
+                minfo("stateful_event %s", stateful_event_str);
                 asp_persist_diff_in_memory(handle, hashed_id, OPERATION_CREATE, index, stateful_event_str, document_version);
                 os_free(stateful_event_str);
             }
