@@ -364,6 +364,11 @@ w_err_t w_auth_validate_data(char *response,
 }
 
 w_err_t w_auth_add_agent(char *response, const char *ip, const char *agentname, char **id, char **key) {
+    if (w_agent_limit_reached()) {
+        merror("Unable to add agent: %s. Agent limit (%u) reached.", agentname, config.max_agents);
+        snprintf(response, OS_SIZE_2048, "ERROR: Agent limit (%u) reached", config.max_agents);
+        return OS_INVALID;
+    }
 
     /* Add the new agent */
     int index;
@@ -376,6 +381,14 @@ w_err_t w_auth_add_agent(char *response, const char *ip, const char *agentname, 
 
     os_strdup(keys.keyentries[index]->id, *id);
     os_strdup(keys.keyentries[index]->raw_key, *key);
+
+    if (w_agent_limit_reached()) {
+        mwarn("Agent limit (%u) has been reached.", config.max_agents);
+    }
+    else if (w_agent_limit_is_close()) {
+        mwarn("Agent limit (%u) is close. Current agents: %u", config.max_agents, keys.keysize);
+        snprintf(response, OS_SIZE_2048, "WARNING: Agent limit (%u) is close. Current agents: %u", config.max_agents, keys.keysize);
+    }
 
     return OS_SUCCESS;
 }
@@ -421,6 +434,26 @@ w_err_t w_auth_validate_groups(const char *groups, char *response) {
     }
     os_free(tmp_groups);
     return ret;
+}
+
+bool w_agent_limit_is_close()
+{
+    // If max_agents is 0, there's no limit
+    if (config.max_agents == 0) {
+        return false;
+    }
+    // Check if we're one agent away from the limit
+    return keys.keysize >= (config.max_agents - 1);
+}
+
+bool w_agent_limit_reached()
+{
+    // If max_agents is 0, there's no limit
+    if (config.max_agents == 0) {
+        return false;
+    }
+    // Check if we've reached the limit
+    return (keys.keysize) >= config.max_agents;
 }
 
 char *w_generate_random_pass()

@@ -42,6 +42,20 @@ int authd_read_config(const char *path) {
     config.timeout_sec = getDefine_Int("auth", "timeout_seconds", 0, INT_MAX);
     config.timeout_usec = getDefine_Int("auth", "timeout_microseconds", 0, 999999);
 
+    // Read max_agents from internal_options.conf (0 means no limit)
+    // Only applies to non-worker servers
+    if (!config.worker_node) {
+        config.max_agents = getDefine_Int("auth", "max_agents", 0, INT_MAX);
+        if (config.max_agents > 0) {
+            mdebug1("Maximum number of agents set to %u", config.max_agents);
+        } else {
+            mdebug1("No agent limit configured (max_agents=0)");
+        }
+    } else {
+        config.max_agents = 0;
+        mdebug1("Worker node detected, max_agents setting ignored");
+    }
+
     return 0;
 }
 
@@ -87,6 +101,11 @@ cJSON *getAuthdConfig(void) {
     cJSON * agents = cJSON_CreateObject();
     cJSON_AddStringToObject(agents, "allow_higher_versions", config.allow_higher_versions ? "yes" : "no");
     cJSON_AddItemToObject(auth, "agents", agents);
+
+    // Add max_agents (from internal_options.conf)
+    if (config.max_agents > 0) {
+        cJSON_AddNumberToObject(auth, "max_agents", config.max_agents);
+    }
 
     cJSON_AddItemToObject(root,"auth",auth);
 

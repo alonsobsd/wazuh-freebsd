@@ -64,6 +64,7 @@ typedef struct authd_config_t {
     bool worker_node;
     bool ipv6;
     bool allow_higher_versions;
+    unsigned int max_agents;  // Max number of agents that can be registered for a cluster
 } authd_config_t;
 
 /**

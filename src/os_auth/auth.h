@@ -219,6 +219,10 @@ cJSON* local_add(const char *id,
  */
 char *w_generate_random_pass();
 
+// TODO: fill
+bool w_agent_limit_is_close();
+bool w_agent_limit_reached();
+
 extern char shost[512];
 extern keystore keys;
 extern volatile int write_pending;

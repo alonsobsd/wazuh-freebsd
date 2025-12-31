@@ -194,6 +194,7 @@ char* local_dispatch(const char *input) {
             goto fail;
         }
 
+        // j: This is where stuff gets added if coming from a worker node
         if (!strcmp(function->valuestring, "add")) {
             cJSON *item = NULL;
             cJSON *force = NULL;
@@ -358,6 +359,13 @@ cJSON* local_add(const char *id,
     mdebug2("add(%s)", name);
     w_mutex_lock(&mutex_keys);
 
+    /* Check agent limit */
+    if (w_agent_limit_reached()) {
+        merror("Unable to add agent: %s . Agent limit (%i) reached.", name, config.max_agents);
+        ierror = EAGLIM;
+        goto fail;
+    }
+
     /* Check if groups are valid to be aggregated */
     if (groups) {
         if (OS_SUCCESS != w_auth_validate_groups(groups, NULL)) {
@@ -437,6 +445,15 @@ cJSON* local_add(const char *id,
 
     minfo("Agent key generated for agent '%s' (requested locally)", name);
     os_free(str_result);
+
+    /* Check agent limits */
+    if (w_agent_limit_reached()) {
+        mwarn("Agent limit (%u) has been reached.", config.max_agents);
+    }
+    else if (w_agent_limit_is_close()) {
+        mwarn("Agent limit (%u) is close. Current agents: %u", config.max_agents, keys.keysize);
+    }
+
     return response;
 
 fail:

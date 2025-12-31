@@ -881,6 +881,12 @@ void enqueue_pending_key(int ret, uint32_t index_client) {
                 w_mutex_unlock(&mutex_keys);
             }
         }
+    } else {
+        // Enrollment failed - ensure error message is flushed before closing
+        if (ret == 0) {
+            // SSL_write succeeded, flush the SSL connection before closing
+            BIO_flush(SSL_get_wbio(g_client_pool[index_client]->ssl));
+        }
     }
 
     delete_client(index_client);
