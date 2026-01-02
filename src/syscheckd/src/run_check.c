@@ -10,6 +10,8 @@
 
 
 // SCHED_BATCH is Linux specific and is only picked up with _GNU_SOURCE
+#include "agent_sync_protocol_c_interface_types.h"
+#include "debug_op.h"
 #include "recovery.h"
 #ifdef __linux__
 #include <sched.h>
@@ -334,6 +336,11 @@ void send_syscheck_msg(const cJSON *_msg) {
 // Persist a syscheck message
 void persist_syscheck_msg(const char *id, Operation_t operation, const char *index, const cJSON* _msg, uint64_t version) {
     if (syscheck.enable_synchronization) {
+        if (operation == OPERATION_CREATE) {
+            // limit +=1
+        } else if (operation == OPERATION_DELETE) {
+            // limit -=1
+        }
         char* msg = cJSON_PrintUnformatted(_msg);
 
         mdebug2(FIM_PERSIST, msg);
@@ -882,6 +889,10 @@ void * fim_run_integrity(__attribute__((unused)) void * args) {
                         bool full_sync_required = fim_recovery_check_if_full_sync_required(table_names[i],
                                                                                            syscheck.sync_handle);
                         if (full_sync_required) {
+                            // j: one for each table
+                            // if (fim_db_get_count_file_entry() > limit) {
+                            //     mwarn("Document count for table %s exceeds the limit (%d). Only %d documents will be synchronized.", table_names[i], limit, limit);
+                            // }
                             fim_recovery_persist_table_and_resync(table_names[i],
                                                                   syscheck.sync_handle,
                                                                   directories_snapshot);

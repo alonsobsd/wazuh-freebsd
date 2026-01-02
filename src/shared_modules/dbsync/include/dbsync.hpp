@@ -174,14 +174,14 @@ class EXPORTED DBSync : public IDBSync
         * @param tableName Name of the table to query.
         * @return the concatenated checksum
         */
-        std::string getConcatenatedChecksums(const std::string& tableName) override;
+        std::string getConcatenatedChecksums(const std::string& tableName, int limit = 0) override;
 
         /**
          * @brief Calculate the checksum-of-checksums for a table
          * @param tableName The table to calculate checksum for
          * @return The SHA1 checksum-of-checksums as a hex string
          */
-        std::string calculateTableChecksum(const std::string& tableName) override;
+        std::string calculateTableChecksum(const std::string& tableName, int limit = 0) override;
 
         /**
          * @brief Increase the version column for all entries in a table.
@@ -189,7 +189,7 @@ class EXPORTED DBSync : public IDBSync
          * @param tableName Name of the table to update.
          * @throws dbsync_error if any database operation fails.
          */
-        void increaseEachEntryVersion(const std::string& tableName) override;
+        void increaseEachEntryVersion(const std::string& tableName, int limit = 0) override;
 
         /**
          * @brief Get all elements from a table.
@@ -198,7 +198,7 @@ class EXPORTED DBSync : public IDBSync
          * @return Vector of JSON objects containing all table elements.
          * @throws dbsync_error if any database operation fails.
          */
-        std::vector<nlohmann::json> getEveryElement(const std::string& tableName) override;
+        std::vector<nlohmann::json> getEveryElement(const std::string& tableName, int limit = 0) override;
     private:
         DBSYNC_HANDLE m_dbsyncHandle;
         bool m_shouldBeRemoved;

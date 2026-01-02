@@ -63,20 +63,21 @@ class IDBSync
 
         /// @brief Gets the concatenated checksums from all the elements of a table
         /// @return the concatenated checksum
-        virtual std::string getConcatenatedChecksums(const std::string& tableName) = 0;
+        virtual std::string getConcatenatedChecksums(const std::string& tableName, int limit = 0) = 0;
 
         /// @brief Calculate the checksum-of-checksums for a table
         /// @param tableName The table to calculate checksum for
         /// @return The SHA1 checksum-of-checksums as a hex string
-        virtual std::string calculateTableChecksum(const std::string& tableName) = 0;
+        virtual std::string calculateTableChecksum(const std::string& tableName, int limit = 0) = 0;
 
         /// @brief Increases the version of each entry in a table by 1
         /// @param tableName Name of the table to update
         /// @throws std::exception if an error occurs during the version update
-        virtual void increaseEachEntryVersion(const std::string& tableName) = 0;
+        virtual void increaseEachEntryVersion(const std::string& tableName, int limit = 0) = 0;
 
         /// @brief Gets all elements from a table
         /// @param tableName Name of the table to query
+        /// @param limit Maximum number of rows to return (0 = no limit)
         /// @return Vector of JSON objects representing all rows in the table
-        virtual std::vector<nlohmann::json> getEveryElement(const std::string& tableName) = 0;
+        virtual std::vector<nlohmann::json> getEveryElement(const std::string& tableName, int limit = 0) = 0;
 };

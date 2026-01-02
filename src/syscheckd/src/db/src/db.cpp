@@ -365,7 +365,7 @@ void fim_db_close_and_delete_database()
     // LCOV_EXCL_STOP
 }
 
-int fim_db_increase_each_entry_version(const char* table_name)
+int fim_db_increase_each_entry_version(const char* table_name, int limit)
 {
     if (!table_name)
     {
@@ -375,7 +375,7 @@ int fim_db_increase_each_entry_version(const char* table_name)
 
     try
     {
-        FIMDB::instance().DBSyncHandler()->increaseEachEntryVersion(table_name);
+        FIMDB::instance().DBSyncHandler()->increaseEachEntryVersion(table_name, limit);
         return 0;
     }
     // LCOV_EXCL_START
@@ -387,7 +387,7 @@ int fim_db_increase_each_entry_version(const char* table_name)
 
     // LCOV_EXCL_STOP
 }
-cJSON* fim_db_get_every_element(const char* table_name)
+cJSON* fim_db_get_every_element(const char* table_name, int limit)
 {
     if (!table_name)
     {
@@ -399,7 +399,7 @@ cJSON* fim_db_get_every_element(const char* table_name)
 
     try
     {
-        std::vector<nlohmann::json> items = FIMDB::instance().DBSyncHandler()->getEveryElement(table_name);
+        std::vector<nlohmann::json> items = FIMDB::instance().DBSyncHandler()->getEveryElement(table_name, limit);
 
         result_array = cJSON_CreateArray();
 
@@ -450,7 +450,7 @@ cJSON* fim_db_get_every_element(const char* table_name)
     return result_array;
 }
 
-char* fim_db_calculate_table_checksum(const char* table_name)
+char* fim_db_calculate_table_checksum(const char* table_name, int limit)
 {
     char* result = NULL;
 
@@ -463,7 +463,7 @@ char* fim_db_calculate_table_checksum(const char* table_name)
     try
     {
         DBSync dbSync(DB::instance().DBSyncHandle());
-        std::string checksum = dbSync.calculateTableChecksum(table_name);
+        std::string checksum = dbSync.calculateTableChecksum(table_name, limit);
         result = strdup(checksum.c_str());
     }
     catch (const std::exception& err)

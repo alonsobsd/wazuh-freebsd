@@ -846,7 +846,7 @@ void DBSync::closeAndDeleteDatabase()
     DBSyncImplementation::instance().closeAndDeleteDatabase(m_dbsyncHandle, m_dbPath);
 }
 
-std::string DBSync::getConcatenatedChecksums(const std::string& tableName)
+std::string DBSync::getConcatenatedChecksums(const std::string& tableName, int limit)
 {
     std::string concatenatedChecksums;
 
@@ -866,14 +866,17 @@ std::string DBSync::getConcatenatedChecksums(const std::string& tableName)
                       .distinctOpt(false)
                       .build()};
 
+    if (limit > 0) {
+        selectQuery.countOpt(limit);
+    }
     selectRows(selectQuery.query(), callback);
 
     return concatenatedChecksums;
 }
 
-std::string DBSync::calculateTableChecksum(const std::string& tableName)
+std::string DBSync::calculateTableChecksum(const std::string& tableName, int limit)
 {
-    std::string concatenated_checksums = getConcatenatedChecksums(tableName);
+    std::string concatenated_checksums = getConcatenatedChecksums(tableName, limit);
 
     // Build checksum-of-checksums
     Utils::HashData hash(Utils::HashType::Sha1);
@@ -886,7 +889,7 @@ std::string DBSync::calculateTableChecksum(const std::string& tableName)
     return final_checksum;
 }
 
-void DBSync::increaseEachEntryVersion(const std::string& tableName)
+void DBSync::increaseEachEntryVersion(const std::string& tableName, int limit)
 {
     std::vector<nlohmann::json> rows;
     auto callback {[&rows](ReturnTypeCallback type, const nlohmann::json & jsonResult)
@@ -901,10 +904,13 @@ void DBSync::increaseEachEntryVersion(const std::string& tableName)
                       .table(tableName)
                       .columnList({"*"})
                       .rowFilter("")
-                      .orderByOpt("")
                       .distinctOpt(false)
                       .build()};
 
+    if (limit > 0) {
+        selectQuery.orderByOpt("checksum");
+        selectQuery.countOpt(limit);
+    }
     selectRows(selectQuery.query(), callback);
 
     size_t processed = 0;
@@ -945,7 +951,8 @@ void DBSync::increaseEachEntryVersion(const std::string& tableName)
 
 }
 
-std::vector<nlohmann::json> DBSync::getEveryElement(const std::string& tableName)
+// TODO: should be renamed to getEveryElementOrderedByChecksum
+std::vector<nlohmann::json> DBSync::getEveryElement(const std::string& tableName, int limit)
 {
     std::vector<nlohmann::json> elements;
     auto callback {[&elements](ReturnTypeCallback type, const nlohmann::json & jsonResult)
@@ -960,7 +967,10 @@ std::vector<nlohmann::json> DBSync::getEveryElement(const std::string& tableName
                       .table(tableName)
                       .columnList({"*"})
                       .build()};
-
+    if (limit > 0) {
+        selectQuery.orderByOpt("checksum");
+        selectQuery.countOpt(limit);
+    }
     selectRows(selectQuery.query(), callback);
 
     return elements;

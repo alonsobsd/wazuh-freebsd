@@ -80,13 +80,14 @@ cJSON* buildRegistryValueStatefulEvent(const char* path, char* value, cJSON* val
 #endif // WIN32
 
 void fim_recovery_persist_table_and_resync(char* table_name, AgentSyncProtocolHandle* handle, const OSList *directories_list){
-    int increase_result = fim_db_increase_each_entry_version(table_name);
+    const int limit = 3;
+    int increase_result = fim_db_increase_each_entry_version(table_name, limit);
     if (increase_result == -1) {
         merror("Failed to increase version for each entry in %s", table_name);
         return;
     }
     // Get all items from the table
-    cJSON* items = fim_db_get_every_element(table_name);
+    cJSON* items = fim_db_get_every_element(table_name, limit);
     if (!items) {
         merror("Failed to retrieve elements from table: %s", table_name);
         return;
@@ -221,8 +222,8 @@ void fim_recovery_persist_table_and_resync(char* table_name, AgentSyncProtocolHa
 // LCOV_EXCL_START
 bool fim_recovery_check_if_full_sync_required(char* table_name, AgentSyncProtocolHandle* handle){
     mdebug1("Attempting to get checksum for %s table", table_name);
-
-    char* final_checksum = fim_db_calculate_table_checksum(table_name);
+    int limit = 3;
+    char* final_checksum = fim_db_calculate_table_checksum(table_name, limit);
     if (!final_checksum) {
         merror("Failed to calculate checksum for table: %s", table_name);
         return false;
