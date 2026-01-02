@@ -86,5 +86,9 @@
 
     "distributed_api": {
         "enabled": true
+    },
+
+    "disconnected_agent_sync": {
+        "enabled": true
     }
 }

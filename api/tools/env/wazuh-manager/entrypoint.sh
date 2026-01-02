@@ -1,5 +1,19 @@
 #!/usr/bin/env bash
 
+CERTS_DIR="/var/ossec/etc/certs"
+
+echo "Waiting for certificates..."
+while [ ! -f "${CERTS_DIR}/root-ca.pem" ]; do
+  sleep 2
+done
+
+echo "Certificates found."
+
+# Set indexer credentials (default: admin/admin)
+/var/ossec/bin/wazuh-keystore -f indexer -k username -v admin
+/var/ossec/bin/wazuh-keystore -f indexer -k password -v admin
+
+# Configure ossec.conf and api.yaml based on the Master role
 if [ "$3" == "master" ]
 then
     python3 /scripts/xml_parser.py /var/ossec/etc/ossec.conf /scripts/master_ossec_conf.xml

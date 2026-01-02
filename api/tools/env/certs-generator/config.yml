@@ -1,0 +1,14 @@
+nodes:
+  indexer:
+    - name: node-1
+      dns: wazuh-indexer
+  server:
+    - name: wazuh-master
+      dns: wazuh-master
+      node_type: master
+    - name: wazuh-worker1
+      dns: wazuh-worker1
+      node_type: worker
+    - name: wazuh-worker2
+      dns: wazuh-worker2
+      node_type: worker

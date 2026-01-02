@@ -4,14 +4,17 @@
 # under the terms of GPLv2
 
 import asyncio
-import logging
+import os
 import time
-from typing import List, Optional
+import logging
+from typing import List
 
 from opensearchpy import AsyncOpenSearch
 
 from wazuh.core.indexer.base import BaseIndex
 from wazuh.core.wdb import AsyncWazuhDBConnection
+from wazuh.core.indexer.credential_manager import KeystoreClient
+from wazuh.core.configuration import get_ossec_conf
 
 # Index patterns for agent states (all data related to agent status)
 AGENT_STATE_INDEX_PATTERN = "wazuh-states-*"
@@ -34,32 +37,60 @@ class DisconnectedAgentGroupSyncTask(BaseIndex):
 
     def __init__(
         self,
-        manager: "Master",
-        logger: logging.Logger,
+        server: "Master",
         cluster_items: dict,
-        indexer_client: Optional[AsyncOpenSearch] = None,
     ):
         """Initialize the disconnected agent group sync task.
 
         Parameters
         ----------
-        manager : Master
+        server : Master
             Reference to the Master server instance
         logger : logging.Logger
             Logger instance for the task
         cluster_items : dict
             Cluster configuration with intervals and parameters
-        indexer_client : AsyncOpenSearch, optional
-            OpenSearch/Elasticsearch client for querying the Indexer
         """
-        # Initialize parent class
-        super().__init__(client=indexer_client)
+        self._logger = logging.getLogger("wazuh")
+        try:
+            # Get configuration from environment variables (standard in Wazuh Docker env)
+            indexer_url = os.environ.get('INDEXER_URL', '')
+            ks_client = KeystoreClient(self._logger)
+            ks_client.connect()
+            indexer_user = ks_client.get("credentials", "username")
+            indexer_pass = ks_client.get("credentials", "password")
+            self._logger.info("Retrieved Indexer credentials from keystore for disconnected agent sync")
+            self._logger.info(f"Indexer URL from environment: {indexer_url}")
+            self._logger.info(f"Indexer Username from keystore: {indexer_user}")
+            self._logger.info(f"Indexer Password retrieved from keystore: {indexer_pass}")
 
-        self.manager = manager
-        self._logger = logger
+            self._logger.info(f"Initializing Indexer client for disconnected agent sync (URL: https://wazuh-indexer:9200)")
+            host_port = indexer_url.split("://", 1)[1]
+            host, port = host_port.split(":", 1)
+            self.client = AsyncOpenSearch(
+                hosts = [{'host': host, 'port': port}],
+                basic_auth=("admin", "admin"),
+                use_ssl=True,
+                verify_certs=True,
+                ca_certs="/var/ossec/etc/certs/root-ca.pem",
+                client_cert="/var/ossec/etc/certs/server.pem",
+                client_key="/var/ossec/etc/certs/server-key.pem",
+            )
+            self._logger.info(self.client.info())
+            
+        except Exception as e:
+            self._logger.error(f"Failed to initialize Indexer client: {e}")
+            return None
+        # Initialize parent class
+        super().__init__(self.client)
+
+        self.server = server
         self.cluster_items = cluster_items
 
         # Configuration parameters
+        ossec_config = get_ossec_conf(section="indexer")
+        self._logger.info(f"Ossec config for indexer section: {ossec_config}")
+        
         master_interval = cluster_items.get("intervals", {}).get("master", {})
         self.sync_interval = master_interval.get("sync_disconnected_agent_groups",
                                                  300)
@@ -80,11 +111,12 @@ class DisconnectedAgentGroupSyncTask(BaseIndex):
             self._logger.info("Non-connected agent group sync task is disabled")
             return
 
-        self._logger.info(
+        self._logger(
             f"Starting non-connected agent group synchronization task "
             f"(interval: {self.sync_interval}s, batch_size: {self.batch_size})"
         )
-
+        
+        self._logger = self.setup_task_logger("Disconnected Agent Groups Sync")
         wdb_conn = AsyncWazuhDBConnection()
 
         while True:
@@ -96,16 +128,16 @@ class DisconnectedAgentGroupSyncTask(BaseIndex):
                 
                 # Get non-connected agents
                 disconnected_agents = await self._get_disconnected_agents(wdb_conn)
-
-                if not disconnected_agents:
-                    self._logger.debug(
+                disconnected_agents_count = len(disconnected_agents)
+                if disconnected_agents_count == 0:
+                    self._logger.info(
                         "No disconnected agents found for synchronization"
                     )
                     await asyncio.sleep(self.sync_interval)
                     continue
 
                 self._logger.info(
-                    f"Found {len(disconnected_agents)} disconnected agents to synchronize"
+                    f"Found {disconnected_agents_count} disconnected agents to synchronize"
                 )
 
                 # Process agents in batches
@@ -122,10 +154,10 @@ class DisconnectedAgentGroupSyncTask(BaseIndex):
 
                 # Log summary of the synchronization cycle
                 cycle_elapsed_time = time.time() - cycle_start_time
-                total_agents = len(disconnected_agents)
                 self._logger.info(
                     f"Finished group synchronization task. "
-                    f"Processed {processed_agents}/{total_agents} agents in {cycle_elapsed_time:.2f} seconds. "
+                    f"Processed {processed_agents}/{disconnected_agents_count}"
+                    f"agents in {cycle_elapsed_time:.2f} seconds. "
                     f"{failed_agents} agents failed."
                 )
 
