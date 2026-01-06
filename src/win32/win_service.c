@@ -269,8 +269,8 @@ VOID WINAPI OssecServiceCtrlHandler(DWORD dwOpcode)
 
                 // Kill children processes spawned by modules, only in wazuh-agent
                 wm_kill_children();
-                stop_wmodules();
                 is_fim_shutdown = true;
+                stop_wmodules();
                 fim_db_teardown();
 #endif
                 ossecServiceStatus.dwCurrentState           = SERVICE_STOPPED;
