@@ -110,7 +110,6 @@ base::Expression processSubBlock(std::tuple<std::string, json::Json>& keyValueTu
     // Process special cases of parse|VARIABLE
     json::Json stageParseValue = preProcessParseStage(key, value);
 
-    //
     if (key == syntax::asset::PARSE_KEY && !stageParseValue.getArray().value().empty())
     {
         value = std::move(stageParseValue);
