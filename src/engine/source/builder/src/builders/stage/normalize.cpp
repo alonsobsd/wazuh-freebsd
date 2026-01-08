@@ -107,7 +107,7 @@ base::Expression processSubBlock(std::tuple<std::string, json::Json>& keyValueTu
 {
     auto& [key, value] = keyValueTuple;
 
-    // Procesar casos especiales de parse|VARIABLE
+    // Process special cases of parse|VARIABLE
     json::Json stageParseValue = preProcessParseStage(key, value);
 
     //
