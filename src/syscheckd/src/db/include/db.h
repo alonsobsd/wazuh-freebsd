@@ -237,6 +237,23 @@ EXPORTED int64_t fim_db_get_last_sync_time(const char* table_name);
  */
 EXPORTED void fim_db_update_last_sync_time_value(const char* table_name, int64_t timestamp);
 
+/**
+ * @brief Update sync flags for entries based on limit.
+ *        Sets sync=1 for the first 'limit' entries (ordered by checksum), sync=0 for the rest.
+ *
+ * @param table_name Name of the table (e.g., "file_entry").
+ * @param limit Number of entries to mark as sync=1.
+ */
+EXPORTED void fim_db_update_sync_limits(const char* table_name, int limit);
+
+/**
+ * @brief Get the sync flag for a file document.
+ *
+ * @param file_path The file path to query.
+ * @return 1 if sync is enabled, 0 if sync is disabled, -1 on error or if entry not found.
+ */
+EXPORTED int fim_db_get_sync_flag(const char* file_path);
+
 #ifdef WIN32
 
 // Registry functions.

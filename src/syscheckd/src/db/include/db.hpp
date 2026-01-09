@@ -173,6 +173,15 @@ class EXPORTED DB final
          * @return int64_t The last sync timestamp (UNIX format), or 0 if not found.
          */
         int64_t getLastSyncTime(const std::string& tableName);
+
+        /**
+         * @brief Update sync flags based on limit.
+         *        Sets sync=1 for first 'limit' entries (ordered by checksum), sync=0 for rest.
+         *
+         * @param tableName Name of the table to update.
+         * @param limit Number of entries to mark with sync=1.
+         */
+        void updateSyncLimits(const std::string& tableName, int limit);
     private:
         DB() = default;
         ~DB() = default;

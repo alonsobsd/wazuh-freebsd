@@ -9,6 +9,7 @@
 
 #include <cJSON.h>
 #include "file.h"
+#include "debug_op.h"
 #include "shared.h"
 #include "../../include/syscheck.h"
 #include "../../config/syscheck-config.h"
@@ -408,6 +409,7 @@ STATIC void transaction_callback(ReturnTypeCallback resultType,
         goto end; // LCOV_EXCL_LINE
     }
 
+    // j : this adds it to the persistent queue
     persist_syscheck_msg(file_path_sha1, sync_operation, FIM_FILES_SYNC_INDEX, stateful_event, document_version);
     cJSON_Delete(stateful_event);
 
@@ -992,7 +994,11 @@ void fim_file(const char *path,
         return;
     }
 
+    // Don't set sync here - it will be set by fim_db_update_sync_limits() after scan completes
+    // This prevents overwriting the sync values on subsequent scans
+    // new_entry.file_entry.data->sync = true;
     if (txn_handle != NULL) {
+        // j: first run?
         txn_context->entry = &new_entry;
         txn_context->config = configuration;
 
@@ -1016,8 +1022,6 @@ void fim_file(const char *path,
 
         free_file_data(new_entry.file_entry.data);
     }
-
-    return;
 }
 
 void fim_process_missing_entry(char * pathname, fim_event_mode mode, whodata_evt * w_evt) {
@@ -1177,6 +1181,11 @@ void fim_file_scan() {
         }
 #endif
         os_free(path);
+    }
+
+    // Update sync flags based on limit
+    if (syscheck.sync_limit > 0) {
+        fim_db_update_sync_limits(FIMDB_FILE_TABLE_NAME, syscheck.sync_limit);
     }
 
     w_rwlock_unlock(&syscheck.directories_lock);

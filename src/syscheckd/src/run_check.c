@@ -336,11 +336,6 @@ void send_syscheck_msg(const cJSON *_msg) {
 // Persist a syscheck message
 void persist_syscheck_msg(const char *id, Operation_t operation, const char *index, const cJSON* _msg, uint64_t version) {
     if (syscheck.enable_synchronization) {
-        if (operation == OPERATION_CREATE) {
-            // limit +=1
-        } else if (operation == OPERATION_DELETE) {
-            // limit -=1
-        }
         char* msg = cJSON_PrintUnformatted(_msg);
 
         mdebug2(FIM_PERSIST, msg);

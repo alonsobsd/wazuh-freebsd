@@ -28,6 +28,7 @@ void FileItem::createFimEntry()
 
         if (data)
         {
+            data->sync = m_sync;
             data->size = m_size;
             data->permissions = const_cast<char*>(m_permissions.c_str());
             data->attributes = const_cast<char*>(m_attributes.c_str());
@@ -86,6 +87,12 @@ void FileItem::createJSON()
     data["hash_sha1"] = m_sha1;
     data["hash_sha256"] = m_sha256;
     data["mtime"] = m_time;
+
+    // Don't include sync in JSON during normal scans
+    // It will be set by fim_db_update_sync_limits() after scan completes
+    // This allows the database DEFAULT value (1) to be used for new entries
+    // data["sync"] = m_sync ? 1 : 0;
+
     conf["data"] = nlohmann::json::array({data});
 
     if (m_oldData)

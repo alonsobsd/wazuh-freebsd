@@ -435,6 +435,42 @@ void fim_db_clean_file_table()
     // LCOV_EXCL_STOP
 }
 
+int fim_db_get_sync_flag(const char* file_path)
+{
+    int retval {-1};
+
+    if (!file_path)
+    {
+        FIMDB::instance().logFunction(LOG_ERROR, "Invalid file path provided to fim_db_get_sync_flag");
+        return retval;
+    }
+
+    try
+    {
+        DB::instance().getFile(
+            file_path,
+            [&retval](const nlohmann::json& resultJson)
+            {
+                if (resultJson.contains("sync"))
+                {
+                    retval = resultJson.at("sync").get<bool>() ? 1 : 0;
+                }
+            });
+    }
+    catch (const no_entry_found& err)
+    {
+        FIMDB::instance().logFunction(LOG_DEBUG_VERBOSE, std::string("Entry not found: ") + err.what());
+    }
+    // LCOV_EXCL_START
+    catch (const std::exception& err)
+    {
+        FIMDB::instance().logFunction(LOG_ERROR, err.what());
+    }
+    // LCOV_EXCL_STOP
+
+    return retval;
+}
+
 #ifdef __cplusplus
 }
 #endif
