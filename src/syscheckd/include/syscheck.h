@@ -319,14 +319,6 @@ void send_syscheck_msg(const cJSON* msg) __attribute__((nonnull));
 void persist_syscheck_msg(const char *id, Operation_t operation, const char *index, const cJSON* _msg, uint64_t version) __attribute__((nonnull(1,3,4)));
 
 /**
- * @brief Get the sync flag for a file document
- *
- * @param file_path The file path to query
- * @return 1 if sync is enabled, 0 if sync is disabled, -1 on error or if entry not found
- */
-int fim_db_get_sync_flag(const char* file_path) __attribute__((nonnull));
-
-/**
  * @brief Send a log message
  *
  * @param msg The message to be sent

@@ -119,6 +119,11 @@ class IAgentSyncProtocol
         /// @return true if stop was requested, false otherwise.
         virtual bool shouldStop() const = 0;
 
+        /// @brief Update sync flags in the persistent queue based on provided IDs.
+        ///        Sets sync=1 for IDs in the vector, sync=0 for all others.
+        /// @param idsToSync Vector of ID strings that should have sync=1.
+        virtual void updateSyncFlags(const std::vector<std::string>& idsToSync) = 0;
+
         /// @brief Destructor
         virtual ~IAgentSyncProtocol() = default;
 

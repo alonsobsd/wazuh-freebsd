@@ -125,4 +125,9 @@ class IPersistentQueue
         /// @brief Deletes the database file.
         /// This method closes the database connection and removes the database file from disk.
         virtual void deleteDatabase() = 0;
+
+        /// @brief Update sync flags for entries based on a set of IDs.
+        ///        Sets sync=1 for IDs in the provided vector, sync=0 for all others.
+        /// @param idsToSync Vector of IDs that should have sync=1.
+        virtual void updateSyncFlags(const std::vector<std::string>& idsToSync) = 0;
 };

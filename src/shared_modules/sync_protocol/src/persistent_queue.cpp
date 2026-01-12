@@ -152,3 +152,17 @@ void PersistentQueue::deleteDatabase()
         throw;
     }
 }
+
+void PersistentQueue::updateSyncFlags(const std::vector<std::string>& idsToSync)
+{
+    try
+    {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_storage->updateSyncFlags(idsToSync);
+    }
+    catch (const std::exception& ex)
+    {
+        m_logger(LOG_ERROR, std::string("PersistentQueue: Error updating sync flags: ") + ex.what());
+        throw;
+    }
+}

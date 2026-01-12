@@ -58,7 +58,8 @@ void PersistentQueueStorage::createTableIfNotExists()
             "sync_status INTEGER NOT NULL DEFAULT 0,"
             "create_status INTEGER NOT NULL DEFAULT 0,"
             "operation_syncing INTEGER NOT NULL DEFAULT 3,"
-            "is_data_context INTEGER NOT NULL DEFAULT 0);";
+            "is_data_context INTEGER NOT NULL DEFAULT 0,"
+            "sync INTEGER NOT NULL DEFAULT 1);";
 
         m_connection.execute(query);
     }
@@ -205,7 +206,7 @@ std::vector<PersistedData> PersistentQueueStorage::fetchAndMarkForSync()
         std::string selectQuery =
             "SELECT rowid, id, idx, data, operation, version, is_data_context "
             "FROM persistent_queue "
-            "WHERE sync_status = ? "
+            "WHERE sync_status = ? AND sync = 1 "
             "ORDER BY rowid ASC;";
 
         SQLite3Wrapper::Statement selectStmt(m_connection, selectQuery);
@@ -278,6 +279,7 @@ std::vector<PersistedData> PersistentQueueStorage::fetchAndMarkForSync()
 
 std::vector<PersistedData> PersistentQueueStorage::fetchPending(bool onlyDataValues)
 {
+    // j: check if we should do sth with this
     std::vector<PersistedData> result;
 
     try
@@ -472,6 +474,65 @@ void PersistentQueueStorage::deleteDatabase()
     catch (const std::exception& ex)
     {
         m_logger(LOG_ERROR, std::string("PersistentQueueStorage: Error deleting database: ") + ex.what());
+        throw;
+    }
+}
+
+void PersistentQueueStorage::updateSyncFlags(const std::vector<std::string>& idsToSync)
+{
+    m_connection.execute("BEGIN IMMEDIATE TRANSACTION;");
+
+    try
+    {
+        // First, set all entries to sync=0
+        const std::string resetQuery = "UPDATE persistent_queue SET sync = 0;";
+        SQLite3Wrapper::Statement resetStmt(m_connection, resetQuery);
+        resetStmt.step();
+
+        if (!idsToSync.empty())
+        {
+            // Then, set sync=1 for the specified IDs
+            // SQLite has a limit on the number of parameters in a single query
+            // (typically 999). Process in batches.
+            constexpr size_t BATCH_SIZE = 500;
+
+            for (size_t i = 0; i < idsToSync.size(); i += BATCH_SIZE)
+            {
+                std::string updateQuery = "UPDATE persistent_queue SET sync = 1 WHERE id IN (";
+
+                size_t batch_end = std::min(i + BATCH_SIZE, idsToSync.size());
+
+                for (size_t j = i; j < batch_end; ++j)
+                {
+                    updateQuery += (j == i ? "?" : ",?");
+                }
+
+                updateQuery += ");";
+
+                SQLite3Wrapper::Statement updateStmt(m_connection, updateQuery);
+
+                for (size_t j = i; j < batch_end; ++j)
+                {
+                    updateStmt.bind(static_cast<int32_t>((j - i) + 1), idsToSync[j]);
+                }
+
+                updateStmt.step();
+            }
+
+            m_logger(LOG_DEBUG, std::string("PersistentQueueStorage: Updated sync flags for ") +
+                     std::to_string(idsToSync.size()) + " entries");
+        }
+        else
+        {
+            m_logger(LOG_DEBUG, "PersistentQueueStorage: Set all entries to sync=0");
+        }
+
+        m_connection.execute("COMMIT;");
+    }
+    catch (const std::exception& ex)
+    {
+        m_logger(LOG_ERROR, std::string("PersistentQueueStorage: SQLite error in updateSyncFlags: ") + ex.what());
+        m_connection.execute("ROLLBACK;");
         throw;
     }
 }

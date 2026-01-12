@@ -1120,6 +1120,7 @@ void fim_handle_delete_by_path(const char *path,
     }
 }
 
+
 void fim_file_scan() {
     OSListNode *node_it;
     directory_t *dir_it;
@@ -1183,9 +1184,16 @@ void fim_file_scan() {
         os_free(path);
     }
 
+    // j: maybe fim_db_transaction_deleted_rows to for delete case?
+
+
     // Update sync flags based on limit
+    // j: at this point, new deletions can be seen in the db, but new deletion arent, those likely get updated on fim_db_transaction_deleted_rows later
     if (syscheck.sync_limit > 0) {
         fim_db_update_sync_limits(FIMDB_FILE_TABLE_NAME, syscheck.sync_limit);
+        if (syscheck.enable_synchronization && syscheck.sync_handle) {
+            fim_update_persistent_queue_sync(syscheck.sync_handle, FIMDB_FILE_TABLE_NAME, syscheck.sync_limit);
+        }
     }
 
     w_rwlock_unlock(&syscheck.directories_lock);

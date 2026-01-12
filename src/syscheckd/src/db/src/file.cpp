@@ -16,6 +16,9 @@
 #include "fimCommonDefs.h"
 #include "fimDB.hpp"
 #include "json.hpp"
+#include "agent_sync_protocol_c_interface.h"
+#include "agent_sync_protocol_c_wrapper.hpp"
+#include "agent_sync_protocol.hpp"
 
 enum SEARCH_FIELDS
 {
@@ -469,6 +472,48 @@ int fim_db_get_sync_flag(const char* file_path)
     // LCOV_EXCL_STOP
 
     return retval;
+}
+
+void fim_update_persistent_queue_sync(AgentSyncProtocolHandle* sync_handle,
+                                       const char* table_name,
+                                       int limit)
+{
+    if (!sync_handle || !table_name || limit <= 0)
+    {
+        return;
+    }
+
+    try
+    {
+        // Collect IDs directly into a C++ vector
+        std::vector<std::string> idsToSync;
+        idsToSync.reserve(limit);
+
+        DB::instance().getTopPathIdsByChecksum(
+            table_name,
+            limit,
+            [&idsToSync](const std::string& id) {
+                idsToSync.push_back(id);
+            });
+
+        if (!idsToSync.empty())
+        {
+            // Cast the opaque C handle to the C++ wrapper and call the C++ API directly
+            auto* wrapper = reinterpret_cast<AgentSyncProtocolWrapper*>(sync_handle);
+            wrapper->impl->updateSyncFlags(idsToSync);
+
+            FIMDB::instance().logFunction(
+                LOG_DEBUG,
+                std::string("Updated sync flags in persistent queue for ") +
+                std::to_string(idsToSync.size()) + " entries");
+        }
+    }
+    catch (const std::exception& ex)
+    {
+        FIMDB::instance().logFunction(
+            LOG_ERROR,
+            std::string("Error updating persistent queue sync flags: ") + ex.what());
+    }
 }
 
 #ifdef __cplusplus

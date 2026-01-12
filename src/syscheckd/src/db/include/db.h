@@ -254,6 +254,31 @@ EXPORTED void fim_db_update_sync_limits(const char* table_name, int limit);
  */
 EXPORTED int fim_db_get_sync_flag(const char* file_path);
 
+/**
+ * @brief Get top N path IDs (SHA1 hashes) from FIM database ordered by checksum.
+ *        Callback is called for each ID.
+ *
+ * @param table_name Name of the table (e.g., "file_entry").
+ * @param limit Maximum number of IDs to retrieve.
+ * @param callback Callback function that receives each ID as a const char*.
+ * @param user_data User data pointer passed to the callback.
+ */
+EXPORTED void fim_db_get_top_path_ids_by_checksum(const char* table_name, int limit,
+                                                   void (*callback)(const char* id, void* user_data),
+                                                   void* user_data);
+
+/**
+ * @brief Update persistent queue sync flags based on FIM database entries.
+ *        Efficiently collects top N path IDs and updates the sync protocol queue.
+ *
+ * @param sync_handle Agent sync protocol handle.
+ * @param table_name Name of the table (e.g., "file_entry").
+ * @param limit Maximum number of entries to mark for sync.
+ */
+EXPORTED void fim_update_persistent_queue_sync(AgentSyncProtocolHandle* sync_handle,
+                                                const char* table_name,
+                                                int limit);
+
 #ifdef WIN32
 
 // Registry functions.

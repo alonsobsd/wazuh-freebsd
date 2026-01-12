@@ -342,6 +342,37 @@ extern "C" {
         }
     }
 
+    void asp_update_sync_flags(AgentSyncProtocolHandle* handle, const char** ids, size_t ids_count)
+    {
+        try
+        {
+            if (!handle || !ids) return;
+
+            // Convert C array of strings to C++ vector
+            std::vector<std::string> ids_vec;
+            ids_vec.reserve(ids_count);
+
+            for (size_t i = 0; i < ids_count; ++i)
+            {
+                if (ids[i])
+                {
+                    ids_vec.emplace_back(ids[i]);
+                }
+            }
+
+            auto* wrapper = reinterpret_cast<AgentSyncProtocolWrapper*>(handle);
+            wrapper->impl->updateSyncFlags(ids_vec);
+        }
+        catch (const std::exception& ex)
+        {
+            return;
+        }
+        catch (...)
+        {
+            return;
+        }
+    }
+
 } // extern "C"
 
 // LCOV_EXCL_STOP

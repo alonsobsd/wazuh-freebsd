@@ -94,6 +94,9 @@ class AgentSyncProtocol : public IAgentSyncProtocol
         /// @copydoc IAgentSyncProtocol::shouldStop
         bool shouldStop() const override;
 
+        /// @copydoc IAgentSyncProtocol::updateSyncFlags
+        void updateSyncFlags(const std::vector<std::string>& idsToSync) override;
+
         /// @brief Parses a FlatBuffer response message received from the manager.
         /// @param data Pointer to the FlatBuffer-encoded message buffer.
         /// @param length Size of the FlatBuffer message in bytes.

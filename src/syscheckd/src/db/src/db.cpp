@@ -135,6 +135,8 @@ void DB::updateSyncLimits(const std::string& tableName, int limit)
             if (type == ReturnTypeCallback::SELECTED)
             {
                 allEntries.push_back(data);
+        FIMDB::instance().logFunction(LOG_INFO,
+            std::string("Synched: ") + data.at("path").get<std::string>());
             }
         };
 
@@ -194,6 +196,61 @@ void DB::updateSyncLimits(const std::string& tableName, int limit)
     catch (const std::exception& ex)
     {
         FIMDB::instance().logFunction(LOG_ERROR, std::string("Error updating sync limits: ") + ex.what());
+    }
+}
+
+void DB::getTopPathIdsByChecksum(const std::string& tableName, int limit, std::function<void(const std::string&)> callback)
+{
+    try
+    {
+        // Collect top N paths ordered by checksum
+        std::vector<std::string> paths;
+        paths.reserve(limit);
+
+        auto selectCallback = [&paths](ReturnTypeCallback type, const nlohmann::json& data)
+        {
+            if (type == ReturnTypeCallback::SELECTED)
+            {
+                paths.emplace_back(data.at("path").get<std::string>());
+            }
+        };
+
+        auto selectQuery = SelectQuery::builder()
+                               .table(tableName)
+                               .columnList({"path"})
+                               .rowFilter("")
+                               .orderByOpt("checksum")
+                               .distinctOpt(false)
+                               .countOpt(limit)
+                               .build();
+
+        FIMDB::instance().executeQuery(selectQuery.query(), selectCallback);
+
+        // Hash each path to get IDs and invoke callback
+        for (const auto& path : paths)
+        {
+            Utils::HashData hashData(Utils::HashType::Sha1);
+            hashData.update(path.c_str(), path.length());
+            auto hashBytes = hashData.hash();
+
+            // Convert to hex string
+            std::string hexHash;
+            hexHash.reserve(hashBytes.size() * 2);
+            for (auto byte : hashBytes)
+            {
+                char hex[3];
+                snprintf(hex, sizeof(hex), "%02x", byte);
+                hexHash += hex;
+            }
+
+            callback(hexHash);
+        }
+    }
+    catch (const std::exception& ex)
+    {
+        FIMDB::instance().logFunction(LOG_ERROR,
+            std::string("Error getting top path IDs by checksum: ") + ex.what());
+        throw;
     }
 }
 
@@ -597,6 +654,29 @@ extern "C"
         try
         {
             DB::instance().updateSyncLimits(table_name, limit);
+        }
+        catch (const std::exception& err)
+        {
+            FIMDB::instance().logFunction(LOG_ERROR, err.what());
+        }
+    }
+
+    void fim_db_get_top_path_ids_by_checksum(const char* table_name, int limit,
+                                              void (*callback)(const char* id, void* user_data),
+                                              void* user_data)
+    {
+        if (!table_name || !callback)
+        {
+            FIMDB::instance().logFunction(LOG_ERROR, "Invalid parameters");
+            return;
+        }
+
+        try
+        {
+            DB::instance().getTopPathIdsByChecksum(table_name, limit,
+                [callback, user_data](const std::string& id) {
+                    callback(id.c_str(), user_data);
+                });
         }
         catch (const std::exception& err)
         {

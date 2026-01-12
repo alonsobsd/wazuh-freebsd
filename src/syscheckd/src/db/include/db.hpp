@@ -182,6 +182,15 @@ class EXPORTED DB final
          * @param limit Number of entries to mark with sync=1.
          */
         void updateSyncLimits(const std::string& tableName, int limit);
+
+        /**
+         * @brief Get top N path IDs (SHA1 hashes) from FIM database ordered by checksum.
+         *
+         * @param tableName Name of the table to query (e.g., "file_entry").
+         * @param limit Maximum number of IDs to retrieve.
+         * @param callback Callback function to receive each ID.
+         */
+        void getTopPathIdsByChecksum(const std::string& tableName, int limit, std::function<void(const std::string&)> callback);
     private:
         DB() = default;
         ~DB() = default;

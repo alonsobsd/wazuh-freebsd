@@ -1,5 +1,12 @@
+#ifndef AGENT_SYNC_PROTOCOL_C_WRAPPER_HPP
+#define AGENT_SYNC_PROTOCOL_C_WRAPPER_HPP
+
+#include <chrono>
+#include <memory>
 #include <optional>
 #include <string>
+#include "agent_sync_protocol.hpp"
+#include "agent_sync_protocol_types.hpp"
 
 /// @brief Wrapper struct that encapsulates the C++ AgentSyncProtocol implementation.
 ///
@@ -27,3 +34,4 @@ struct AgentSyncProtocolWrapper
         : impl(std::make_unique<AgentSyncProtocol>(module, db_path, mq_funcs, std::move(logger), syncEndDelay, timeout, retries, maxEps, nullptr)) {}
 };
 
+#endif // AGENT_SYNC_PROTOCOL_C_WRAPPER_HPP

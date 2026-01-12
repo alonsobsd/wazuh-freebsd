@@ -80,6 +80,11 @@ class PersistentQueueStorage : public IPersistentQueueStorage
         /// This method closes the database connection and removes the database file from disk.
         void deleteDatabase() override;
 
+        /// @brief Update sync flags for entries based on a set of IDs.
+        ///        Sets sync=1 for IDs in the provided set, sync=0 for all others.
+        /// @param idsToSync Set of IDs that should have sync=1.
+        void updateSyncFlags(const std::vector<std::string>& idsToSync);
+
     private:
         /// @brief Active SQLite database connection.
         SQLite3Wrapper::Connection m_connection;

@@ -152,6 +152,13 @@ void asp_reset(AgentSyncProtocolHandle* handle);
 /// @return true if stop was requested, false otherwise.
 bool asp_should_stop(const AgentSyncProtocolHandle* handle);
 
+/// @brief Update sync flags in the persistent queue based on provided IDs.
+///        Sets sync=1 for IDs in the array, sync=0 for all others.
+/// @param handle Pointer to the AgentSyncProtocol handle.
+/// @param ids Array of ID strings that should have sync=1.
+/// @param ids_count Number of IDs in the array.
+void asp_update_sync_flags(AgentSyncProtocolHandle* handle, const char** ids, size_t ids_count);
+
 #ifdef __cplusplus
 }
 #endif

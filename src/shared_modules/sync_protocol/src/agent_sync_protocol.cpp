@@ -1291,3 +1291,22 @@ bool AgentSyncProtocol::shouldStop() const
 {
     return m_stopRequested.load(std::memory_order_acquire);
 }
+
+void AgentSyncProtocol::updateSyncFlags(const std::vector<std::string>& idsToSync)
+{
+    if (!m_persistentQueue)
+    {
+        m_logger(LOG_ERROR, "Cannot update sync flags: persistent queue is not available");
+        return;
+    }
+
+    try
+    {
+        m_persistentQueue->updateSyncFlags(idsToSync);
+    }
+    catch (const std::exception& ex)
+    {
+        m_logger(LOG_ERROR, std::string("Failed to update sync flags: ") + ex.what());
+        throw;
+    }
+}

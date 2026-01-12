@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wall -Wextra -Wshadow -Wnon-virtual-dtor -Woverloaded-virtual -Wunused -Wcast-align -Wformat=2 -pthread -O3 -s CMakeFiles/sync_protocol_test_tool.dir/main.cpp.o -o ../bin/sync_protocol_test_tool  -Wl,-rpath,/home/juan/wazuh/src/shared_modules/sync_protocol/com/lib ../lib/libagent_sync_protocol.so -lpthread -ldl 
