@@ -39,7 +39,6 @@ void PersistentQueue::submit(const std::string& id,
                              const std::string& data,
                              Operation operation,
                              uint64_t version,
-                             int sync,
                              bool isDataContext)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -47,7 +46,7 @@ void PersistentQueue::submit(const std::string& id,
 
     try
     {
-        m_storage->submitOrCoalesce(msg, sync);
+        m_storage->submitOrCoalesce(msg);
     }
     catch (const std::exception& ex)
     {

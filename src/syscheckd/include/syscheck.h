@@ -315,9 +315,8 @@ void send_syscheck_msg(const cJSON* msg) __attribute__((nonnull));
  * @param index The index for the event.
  * @param _msg The message to be persisted
  * @param version The document version (64-bit unsigned integer)
- * @param sync_flag Whether this entry should be synced (1) or not (0)
  */
-void persist_syscheck_msg(const char *id, Operation_t operation, const char *index, const cJSON* _msg, uint64_t version, int sync_flag) __attribute__((nonnull(1,3,4)));
+void persist_syscheck_msg(const char *id, Operation_t operation, const char *index, const cJSON* _msg, uint64_t version) __attribute__((nonnull(1,3,4)));
 
 /**
  * @brief Send a log message

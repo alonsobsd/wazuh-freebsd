@@ -46,7 +46,6 @@ class AgentSyncProtocol : public IAgentSyncProtocol
                                const std::string& index,
                                const std::string& data,
                                uint64_t version,
-                               int sync = 1,
                                bool isDataContext = false) override;
 
         /// @copydoc IAgentSyncProtocol::persistDifferenceInMemory

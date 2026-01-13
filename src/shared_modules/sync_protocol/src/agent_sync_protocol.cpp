@@ -81,7 +81,6 @@ void AgentSyncProtocol::persistDifference(const std::string& id,
                                           const std::string& index,
                                           const std::string& data,
                                           uint64_t version,
-                                          int sync,
                                           bool isDataContext)
 {
     try
@@ -91,7 +90,7 @@ void AgentSyncProtocol::persistDifference(const std::string& id,
             throw std::runtime_error("persistDifference() requires a persistent queue. Initialize AgentSyncProtocol with a valid dbPath.");
         }
 
-        m_persistentQueue->submit(id, index, data, operation, version, sync, isDataContext);
+        m_persistentQueue->submit(id, index, data, operation, version, isDataContext);
     }
     catch (const std::exception& e)
     {

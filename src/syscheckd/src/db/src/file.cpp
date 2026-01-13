@@ -474,6 +474,60 @@ int fim_db_get_sync_flag(const char* file_path)
     return retval;
 }
 
+int fim_db_set_sync_flag(const char* file_path, int sync_value)
+{
+    if (!file_path)
+    {
+        FIMDB::instance().logFunction(LOG_ERROR, "Invalid file path provided to fim_db_set_sync_flag");
+        return -1;
+    }
+
+    if (sync_value != 0 && sync_value != 1)
+    {
+        FIMDB::instance().logFunction(LOG_ERROR, "Invalid sync value provided to fim_db_set_sync_flag");
+        return -1;
+    }
+
+    try
+    {
+        std::string encodedPath = file_path;
+        FIMDBCreator<OS_TYPE>::encodeString(encodedPath);
+
+        // Build JSON for update
+        nlohmann::json updateData;
+        updateData["table"] = FIMDB_FILE_TABLE_NAME;
+        updateData["data"] = nlohmann::json::array();
+        nlohmann::json entry;
+        entry["path"] = encodedPath;
+        entry["sync"] = (sync_value == 1);
+        updateData["data"].push_back(entry);
+
+        // Execute update
+        bool updateSucceeded = false;
+        FIMDB::instance().updateItem(updateData,
+            [&updateSucceeded](ReturnTypeCallback type, const nlohmann::json&) {
+                if (type == ReturnTypeCallback::MODIFIED)
+                {
+                    updateSucceeded = true;
+                }
+            });
+
+        return updateSucceeded ? 0 : -1;
+    }
+    catch (const no_entry_found& err)
+    {
+        FIMDB::instance().logFunction(LOG_INFO, std::string("Entry not found: ") + err.what());
+        return -1;
+    }
+    // LCOV_EXCL_START
+    catch (const std::exception& err)
+    {
+        FIMDB::instance().logFunction(LOG_ERROR, err.what());
+        return -1;
+    }
+    // LCOV_EXCL_STOP
+}
+
 void fim_update_persistent_queue_sync(AgentSyncProtocolHandle* sync_handle,
                                        const char* table_name,
                                        int limit)

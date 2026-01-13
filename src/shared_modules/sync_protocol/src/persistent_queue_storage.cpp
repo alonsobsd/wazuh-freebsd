@@ -58,8 +58,7 @@ void PersistentQueueStorage::createTableIfNotExists()
             "sync_status INTEGER NOT NULL DEFAULT 0,"
             "create_status INTEGER NOT NULL DEFAULT 0,"
             "operation_syncing INTEGER NOT NULL DEFAULT 3,"
-            "is_data_context INTEGER NOT NULL DEFAULT 0,"
-            "sync INTEGER NOT NULL DEFAULT 1);";
+            "is_data_context INTEGER NOT NULL DEFAULT 0);";
 
         m_connection.execute(query);
     }
@@ -73,7 +72,7 @@ void PersistentQueueStorage::createTableIfNotExists()
     // LCOV_EXCL_STOP
 }
 
-void PersistentQueueStorage::submitOrCoalesce(const PersistedData& newData, int sync)
+void PersistentQueueStorage::submitOrCoalesce(const PersistedData& newData)
 {
     m_connection.execute("BEGIN IMMEDIATE TRANSACTION;");
 
@@ -110,7 +109,7 @@ void PersistentQueueStorage::submitOrCoalesce(const PersistedData& newData, int 
 
         if (!oldDataFound)
         {
-            const std::string insertQuery = "INSERT INTO persistent_queue (id, idx, data, operation, version, create_status, is_data_context, sync) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
+            const std::string insertQuery = "INSERT INTO persistent_queue (id, idx, data, operation, version, create_status, is_data_context) VALUES (?, ?, ?, ?, ?, ?, ?);";
             SQLite3Wrapper::Statement insertStmt(m_connection, insertQuery);
             insertStmt.bind(1, newData.id);
             insertStmt.bind(2, newData.index);
@@ -121,7 +120,6 @@ void PersistentQueueStorage::submitOrCoalesce(const PersistedData& newData, int 
                             ? static_cast<int>(CreateStatus::NEW)
                             : static_cast<int>(CreateStatus::EXISTING));
             insertStmt.bind(7, newData.is_data_context ? 1 : 0);
-            insertStmt.bind(8, sync);
             insertStmt.step();
         }
         else
@@ -207,7 +205,7 @@ std::vector<PersistedData> PersistentQueueStorage::fetchAndMarkForSync()
         std::string selectQuery =
             "SELECT rowid, id, idx, data, operation, version, is_data_context "
             "FROM persistent_queue "
-            "WHERE sync_status = ? AND sync = 1 "
+            "WHERE sync_status = ? "
             "ORDER BY rowid ASC;";
 
         SQLite3Wrapper::Statement selectStmt(m_connection, selectQuery);

@@ -1,0 +1,51 @@
+
+● Perfect! I've successfully refactored the code as you requested. Here's what changed:
+
+  Summary of Changes
+
+  1. Reverted fim_file() logic (file.c:1024-1025)
+
+  - Removed the sync flag determination logic
+  - Now just sets sync = false initially - the actual value will be determined in transaction_c
+allback
+
+  2. Added fim_db_set_sync_flag() function
+
+  - Declaration in db.h:257-264
+  - Implementation in file.cpp:477-529
+  - Updates the sync flag for a specific file path in the file_entry database
+  - Uses DBSync's updateItem method to modify the sync column
+
+  3. Updated transaction_callback() logic (file.c:277-308)
+
+  For CREATE events (INSERTED):
+
+  - After the INSERT succeeds and files_in_db is incremented
+  - Determines: sync = (files_in_db <= sync_limit) ? 1 : 0
+  - Calls fim_db_set_sync_flag(path, sync_flag) to update the DB
+
+  For MODIFY events (MODIFIED):
+
+  - Reads current sync flag from result_json
+  - If sync=0 AND files_in_db <= sync_limit:
+    - Updates to sync=1
+    - Calls fim_db_set_sync_flag(path, 1) to update the DB
+  - This allows files to be promoted to sync=1 when space becomes available (e.g., other files 
+deleted)
+
+  For DELETE events:
+
+  - Unchanged - reads sync flag from result_json
+
+  4. Result
+
+  - ✅ CREATE events get correct sync flag after DB insert succeeds
+  - ✅ MODIFY events can be promoted from sync=0 to sync=1 if now within limits
+  - ✅ file_entry DB always has the correct sync flag
+  - ✅ Only files with sync=1 are added to persistent queue (line 438)
+  - ✅ Persistent queue no longer needs sync column - it only contains sync-eligible items
+
+  The logic now correctly handles the dynamic nature of the file count and can promote files to
+ sync=1 when the count drops below the limit!
+
+✻ Brewed for 2m 38s

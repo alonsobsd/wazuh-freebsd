@@ -255,6 +255,15 @@ EXPORTED void fim_db_update_sync_limits(const char* table_name, int limit);
 EXPORTED int fim_db_get_sync_flag(const char* file_path);
 
 /**
+ * @brief Set the sync flag for a file document.
+ *
+ * @param file_path The file path to update.
+ * @param sync_value The sync value to set (0 or 1).
+ * @return 0 on success, -1 on error or if entry not found.
+ */
+EXPORTED int fim_db_set_sync_flag(const char* file_path, int sync_value);
+
+/**
  * @brief Get top N path IDs (SHA1 hashes) from FIM database ordered by checksum.
  *        Callback is called for each ID.
  *
