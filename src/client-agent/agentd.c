@@ -11,8 +11,16 @@
 #include "shared.h"
 #include "agentd.h"
 #include "os_net/os_net.h"
+#include "module_limits.h"
 
 bool needs_config_reload = false;
+
+/* Agent's module limits instance */
+module_limits_t agent_module_limits;
+
+/* Cluster name received from manager */
+char agent_cluster_name[256] = {0};
+
 void reload_handler(int signum) {
     if (signum == SIGUSR1) {
         minfo("SIGNAL [(%d)-(%s)] Received. Reload agentd.", signum, strsignal(signum));
@@ -27,6 +35,9 @@ void AgentdStart(int uid, int gid, const char *user, const char *group)
     int maxfd = 0;
     fd_set fdset;
     struct timeval fdtimeout;
+
+    /* Initialize module limits with default values */
+    module_limits_init(&agent_module_limits);
 
     available_server = 0;
 

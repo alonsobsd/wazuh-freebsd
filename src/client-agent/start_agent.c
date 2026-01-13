@@ -11,6 +11,11 @@
 #include "shared.h"
 #include "agentd.h"
 #include "os_net/os_net.h"
+#include "module_limits.h"
+
+/* Defined in agentd.c */
+extern module_limits_t agent_module_limits;
+extern char agent_cluster_name[256];
 
 #ifdef WAZUH_UNIT_TESTING
     // Remove static qualifier when unit testing
@@ -36,6 +41,114 @@ static ssize_t receive_message(char *buffer, unsigned int max_lenght);
 static void w_agentd_keys_init (void);
 STATIC bool agent_handshake_to_server(int server_id, bool is_startup);
 STATIC void send_msg_on_startup(void);
+
+/**
+ * @brief Parse JSON payload from handshake ACK response
+ * @param json_str JSON string to parse
+ * @param limits Pointer to module limits structure to populate
+ * @param cluster_name Buffer to store cluster name (min 256 bytes)
+ * @param cluster_name_size Size of cluster_name buffer
+ * @return 0 on success, -1 on error
+ */
+STATIC int parse_handshake_json(const char *json_str, module_limits_t *limits,
+                                char *cluster_name, size_t cluster_name_size) {
+    cJSON *root = NULL;
+    cJSON *limits_obj = NULL;
+    cJSON *module = NULL;
+    cJSON *field = NULL;
+
+    if (!json_str || !limits) {
+        return -1;
+    }
+
+    root = cJSON_Parse(json_str);
+    if (!root) {
+        merror("Failed to parse limits JSON");
+        return -1;
+    }
+
+    /* Parse limits object */
+    limits_obj = cJSON_GetObjectItem(root, "limits");
+    if (!limits_obj) {
+        mdebug1("No 'limits' object in handshake JSON");
+        cJSON_Delete(root);
+        return -1;
+    }
+
+    /* Parse FIM limits */
+    module = cJSON_GetObjectItem(limits_obj, "fim");
+    if (module) {
+        if (field = cJSON_GetObjectItem(module, "file"), cJSON_IsNumber(field)) {
+            limits->fim.file = field->valueint;
+        }
+        if (field = cJSON_GetObjectItem(module, "registry"), cJSON_IsNumber(field)) {
+            limits->fim.registry = field->valueint;
+        }
+    }
+
+    /* Parse Syscollector limits */
+    module = cJSON_GetObjectItem(limits_obj, "syscollector");
+    if (module) {
+        if (field = cJSON_GetObjectItem(module, "hotfixes"), cJSON_IsNumber(field)) {
+            limits->syscollector.hotfixes = field->valueint;
+        }
+        if (field = cJSON_GetObjectItem(module, "packages"), cJSON_IsNumber(field)) {
+            limits->syscollector.packages = field->valueint;
+        }
+        if (field = cJSON_GetObjectItem(module, "processes"), cJSON_IsNumber(field)) {
+            limits->syscollector.processes = field->valueint;
+        }
+        if (field = cJSON_GetObjectItem(module, "ports"), cJSON_IsNumber(field)) {
+            limits->syscollector.ports = field->valueint;
+        }
+        if (field = cJSON_GetObjectItem(module, "network_iface"), cJSON_IsNumber(field)) {
+            limits->syscollector.network_iface = field->valueint;
+        }
+        if (field = cJSON_GetObjectItem(module, "network_protocol"), cJSON_IsNumber(field)) {
+            limits->syscollector.network_protocol = field->valueint;
+        }
+        if (field = cJSON_GetObjectItem(module, "network_address"), cJSON_IsNumber(field)) {
+            limits->syscollector.network_address = field->valueint;
+        }
+        if (field = cJSON_GetObjectItem(module, "hardware"), cJSON_IsNumber(field)) {
+            limits->syscollector.hardware = field->valueint;
+        }
+        if (field = cJSON_GetObjectItem(module, "os_info"), cJSON_IsNumber(field)) {
+            limits->syscollector.os_info = field->valueint;
+        }
+        if (field = cJSON_GetObjectItem(module, "users"), cJSON_IsNumber(field)) {
+            limits->syscollector.users = field->valueint;
+        }
+        if (field = cJSON_GetObjectItem(module, "groups"), cJSON_IsNumber(field)) {
+            limits->syscollector.groups = field->valueint;
+        }
+        if (field = cJSON_GetObjectItem(module, "services"), cJSON_IsNumber(field)) {
+            limits->syscollector.services = field->valueint;
+        }
+    }
+
+    /* Parse SCA limits */
+    module = cJSON_GetObjectItem(limits_obj, "sca");
+    if (module) {
+        if (field = cJSON_GetObjectItem(module, "checks"), cJSON_IsNumber(field)) {
+            limits->sca.checks = field->valueint;
+        }
+    }
+
+    limits->limits_received = true;
+
+    /* Parse cluster_name (separate from limits) */
+    if (cluster_name && cluster_name_size > 0) {
+        cJSON *cluster = cJSON_GetObjectItem(root, "cluster_name");
+        if (cluster && cJSON_IsString(cluster) && cluster->valuestring) {
+            strncpy(cluster_name, cluster->valuestring, cluster_name_size - 1);
+            cluster_name[cluster_name_size - 1] = '\0';
+        }
+    }
+
+    cJSON_Delete(root);
+    return 0;
+}
 
 /**
  * @brief Connects to a specified server
@@ -331,8 +444,27 @@ STATIC bool agent_handshake_to_server(int server_id, bool is_startup) {
                 /* Check for commands */
                 if (IsValidHeader(tmp_msg)) {
                     /* If it is an ack reply */
-                    if (strcmp(tmp_msg, HC_ACK) == 0) {
+                    if (strncmp(tmp_msg, HC_ACK, strlen(HC_ACK)) == 0) {
                         available_server = time(0);
+
+                        /* Check for JSON payload after HC_ACK */
+                        const char *json_start = strchr(tmp_msg, '{');
+                        if (json_start) {
+                            if (parse_handshake_json(json_start, &agent_module_limits,
+                                                      agent_cluster_name, sizeof(agent_cluster_name)) == 0) {
+                                minfo("Module limits received from manager");
+
+                                if (agent_cluster_name[0] != '\0') {
+                                    minfo("Connected to cluster: %s", agent_cluster_name);
+                                } else {
+                                    mwarn("No cluster name received from manager");
+                                }
+                            } else {
+                                mwarn("Error parsing module limits in ACK, using defaults");
+                            }
+                        } else {
+                            minfo("No module limits in ACK, using defaults");
+                        }
 
                         minfo(AG_CONNECTED, agt->server[server_id].rip,
                                 agt->server[server_id].port, "tcp");
