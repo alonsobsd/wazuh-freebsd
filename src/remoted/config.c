@@ -14,6 +14,7 @@
 #include "os_net/os_net.h"
 #include "remoted.h"
 #include "config/config.h"
+#include "module_limits.h"
 
 /* Global variables */
 int pass_empty_keyfile;
@@ -46,10 +47,17 @@ int disk_storage;
 size_t batch_events_capacity;
 size_t batch_events_per_agent_capacity;
 
+/* Manager's module limits instance */
+module_limits_t manager_module_limits;
+bool manager_module_limits_enabled = true;
+
 /* Read the config file (the remote access) */
 int RemotedConfig(const char *cfgfile, remoted *cfg)
 {
     int modules = 0;
+
+    /* Initialize module limits with default values */
+    module_limits_init(&manager_module_limits);
 
     modules |= CREMOTE;
 
