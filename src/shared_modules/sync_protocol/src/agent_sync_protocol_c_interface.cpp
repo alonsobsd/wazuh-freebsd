@@ -65,7 +65,8 @@ extern "C" {
                           Operation_t operation,
                           const char* index,
                           const char* data,
-                          uint64_t version)
+                          uint64_t version,
+                          int sync)
     {
         try
         {
@@ -74,7 +75,7 @@ extern "C" {
             auto* wrapper = reinterpret_cast<AgentSyncProtocolWrapper*>(handle);
             wrapper->impl->persistDifference(id,
                                              static_cast<Operation>(operation),
-                                             index, data, version);
+                                             index, data, version, sync);
         }
         catch (const std::exception& ex)
         {

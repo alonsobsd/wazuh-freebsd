@@ -46,12 +46,14 @@ void asp_destroy(AgentSyncProtocolHandle* handle);
 /// @param index Target index or destination for the diff.
 /// @param data JSON string representing the data to persist.
 /// @param version Version of the data (64-bit unsigned integer).
+/// @param sync Whether this entry should be synced (1) or not (0).
 void asp_persist_diff(AgentSyncProtocolHandle* handle,
                       const char* id,
                       Operation_t operation,
                       const char* index,
                       const char* data,
-                      uint64_t version);
+                      uint64_t version,
+                      int sync);
 
 /// @brief Persists a difference to in-memory vector instead of database.
 ///

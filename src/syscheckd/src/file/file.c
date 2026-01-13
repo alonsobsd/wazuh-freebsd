@@ -217,8 +217,9 @@ STATIC void handle_orphaned_delete(const char* path,
     OS_SHA1_Str(path, -1, file_path_sha1);
 
     // Persist stateful event for sync
+    // For orphaned deletes, always sync (sync=1) to ensure cleanup on manager
     persist_syscheck_msg(file_path_sha1, OPERATION_DELETE, FIM_FILES_SYNC_INDEX,
-                         stateful_event, document_version);
+                         stateful_event, document_version, 1);
 
     cJSON_Delete(stateful_event);
 }
@@ -242,6 +243,7 @@ STATIC void transaction_callback(ReturnTypeCallback resultType,
     char *path = NULL;
     char iso_time[32];
     Operation_t sync_operation = OPERATION_NO_OP;
+    int sync_flag = 1; // Default to sync enabled
 
     callback_ctx *txn_context = (callback_ctx *) user_data;
 
@@ -276,11 +278,26 @@ STATIC void transaction_callback(ReturnTypeCallback resultType,
         case INSERTED:
             txn_context->event->type = FIM_ADD;
             sync_operation = OPERATION_CREATE;
+            files_in_db++;
+            // For CREATE events: use sync flag already set in the entry
+            if (txn_context->entry != NULL && txn_context->entry->file_entry.data != NULL) {
+                sync_flag = txn_context->entry->file_entry.data->sync ? 1 : 0;
+            }
             break;
 
         case MODIFIED:
             txn_context->event->type = FIM_MODIFICATION;
             sync_operation = OPERATION_MODIFY;
+            // For MODIFY events: use sync flag already set in the entry
+            if (txn_context->entry != NULL && txn_context->entry->file_entry.data != NULL) {
+                sync_flag = txn_context->entry->file_entry.data->sync ? 1 : 0;
+            } else {
+                // Fallback: read from DB result if entry is not available
+                cJSON *sync_json = cJSON_GetObjectItem(result_json, "sync");
+                if (sync_json != NULL && cJSON_IsNumber(sync_json)) {
+                    sync_flag = sync_json->valueint;
+                }
+            }
             break;
 
         case DELETED:
@@ -289,6 +306,14 @@ STATIC void transaction_callback(ReturnTypeCallback resultType,
             }
             txn_context->event->type = FIM_DELETE;
             sync_operation = OPERATION_DELETE;
+            files_in_db--;
+            // For DELETE events: entry is NULL, read sync flag from DB result
+            {
+                cJSON *sync_json = cJSON_GetObjectItem(result_json, "sync");
+                if (sync_json != NULL && cJSON_IsNumber(sync_json)) {
+                    sync_flag = sync_json->valueint;
+                }
+            }
             break;
 
         case MAX_ROWS:
@@ -410,7 +435,7 @@ STATIC void transaction_callback(ReturnTypeCallback resultType,
     }
 
     // j : this adds it to the persistent queue
-    persist_syscheck_msg(file_path_sha1, sync_operation, FIM_FILES_SYNC_INDEX, stateful_event, document_version);
+    persist_syscheck_msg(file_path_sha1, sync_operation, FIM_FILES_SYNC_INDEX, stateful_event, document_version, sync_flag);
     cJSON_Delete(stateful_event);
 
 end:
@@ -994,11 +1019,22 @@ void fim_file(const char *path,
         return;
     }
 
-    // Don't set sync here - it will be set by fim_db_update_sync_limits() after scan completes
-    // This prevents overwriting the sync values on subsequent scans
-    // new_entry.file_entry.data->sync = true;
+    // Determine sync flag based on whether file exists in DB
+    int existing_sync = fim_db_get_sync_flag(path);
+    if (existing_sync == -1) {
+        // File doesn't exist in DB - this is a CREATE event
+        // Set sync flag based on whether we're within the limit
+        if (syscheck.sync_limit > 0) {
+            new_entry.file_entry.data->sync = (files_in_db < syscheck.sync_limit);
+        } else {
+            new_entry.file_entry.data->sync = true;
+        }
+    } else {
+        // File exists in DB - preserve its existing sync flag
+        new_entry.file_entry.data->sync = (existing_sync == 1);
+    }
+
     if (txn_handle != NULL) {
-        // j: first run?
         txn_context->entry = &new_entry;
         txn_context->config = configuration;
 
@@ -1189,12 +1225,12 @@ void fim_file_scan() {
 
     // Update sync flags based on limit
     // j: at this point, new deletions can be seen in the db, but new deletion arent, those likely get updated on fim_db_transaction_deleted_rows later
-    if (syscheck.sync_limit > 0) {
-        fim_db_update_sync_limits(FIMDB_FILE_TABLE_NAME, syscheck.sync_limit);
-        if (syscheck.enable_synchronization && syscheck.sync_handle) {
-            fim_update_persistent_queue_sync(syscheck.sync_handle, FIMDB_FILE_TABLE_NAME, syscheck.sync_limit);
-        }
-    }
+    // if (syscheck.sync_limit > 0) {
+    //     fim_db_update_sync_limits(FIMDB_FILE_TABLE_NAME, syscheck.sync_limit);
+    //     if (syscheck.enable_synchronization && syscheck.sync_handle) {
+    //         fim_update_persistent_queue_sync(syscheck.sync_handle, FIMDB_FILE_TABLE_NAME, syscheck.sync_limit);
+    //     }
+    // }
 
     w_rwlock_unlock(&syscheck.directories_lock);
     w_mutex_unlock(&syscheck.fim_scan_mutex);

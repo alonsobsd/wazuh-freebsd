@@ -90,6 +90,7 @@ class IPersistentQueue
         /// @param data The serialized payload of the message.
         /// @param operation The type of operation (CREATE, MODIFY, DELETE).
         /// @param version Version of the data.
+        /// @param sync Whether this entry should be synced (1) or not (0).
         /// @param isDataContext Flag to mark data as DataContext (true) or DataValue (false).
         ///                      DataContext messages are used for vulnerability detection data
         ///                      that requires special handling on the manager side. Default is false.
@@ -98,6 +99,7 @@ class IPersistentQueue
                             const std::string& data,
                             Operation operation,
                             uint64_t version,
+                            int sync = 1,
                             bool isDataContext = false) = 0;
 
         /// @brief Fetches a batch of pending messages and marks them for synchronization.

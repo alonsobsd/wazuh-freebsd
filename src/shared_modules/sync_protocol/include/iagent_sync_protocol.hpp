@@ -25,12 +25,14 @@ class IAgentSyncProtocol
         /// @param index Index where to send the difference
         /// @param data Difference data
         /// @param version Version of the data.
+        /// @param sync Whether this entry should be synced (1) or not (0).
         /// @param isDataContext Flag to mark data as DataContext (true) or DataValue (false).
         virtual void persistDifference(const std::string& id,
                                        Operation operation,
                                        const std::string& index,
                                        const std::string& data,
                                        uint64_t version,
+                                       int sync = 1,
                                        bool isDataContext = false) = 0;
 
         /// @brief Persist a difference to in-memory vector instead of database.

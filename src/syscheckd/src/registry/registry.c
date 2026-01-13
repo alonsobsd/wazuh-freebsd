@@ -328,7 +328,7 @@ STATIC void handle_orphaned_delete_registry_key(const char* path,
 
     // Persist stateful event for sync
     persist_syscheck_msg(registry_key_sha1, OPERATION_DELETE, FIM_REGISTRY_KEYS_SYNC_INDEX,
-                         stateful_event, document_version);
+                         stateful_event, document_version, 1);
 
     cJSON_Delete(stateful_event);
 }

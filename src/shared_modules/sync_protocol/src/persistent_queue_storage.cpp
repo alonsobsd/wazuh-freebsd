@@ -73,7 +73,7 @@ void PersistentQueueStorage::createTableIfNotExists()
     // LCOV_EXCL_STOP
 }
 
-void PersistentQueueStorage::submitOrCoalesce(const PersistedData& newData)
+void PersistentQueueStorage::submitOrCoalesce(const PersistedData& newData, int sync)
 {
     m_connection.execute("BEGIN IMMEDIATE TRANSACTION;");
 
@@ -110,7 +110,7 @@ void PersistentQueueStorage::submitOrCoalesce(const PersistedData& newData)
 
         if (!oldDataFound)
         {
-            const std::string insertQuery = "INSERT INTO persistent_queue (id, idx, data, operation, version, create_status, is_data_context) VALUES (?, ?, ?, ?, ?, ?, ?);";
+            const std::string insertQuery = "INSERT INTO persistent_queue (id, idx, data, operation, version, create_status, is_data_context, sync) VALUES (?, ?, ?, ?, ?, ?, ?, ?);";
             SQLite3Wrapper::Statement insertStmt(m_connection, insertQuery);
             insertStmt.bind(1, newData.id);
             insertStmt.bind(2, newData.index);
@@ -121,6 +121,7 @@ void PersistentQueueStorage::submitOrCoalesce(const PersistedData& newData)
                             ? static_cast<int>(CreateStatus::NEW)
                             : static_cast<int>(CreateStatus::EXISTING));
             insertStmt.bind(7, newData.is_data_context ? 1 : 0);
+            insertStmt.bind(8, sync);
             insertStmt.step();
         }
         else

@@ -334,13 +334,13 @@ void send_syscheck_msg(const cJSON *_msg) {
 }
 
 // Persist a syscheck message
-void persist_syscheck_msg(const char *id, Operation_t operation, const char *index, const cJSON* _msg, uint64_t version) {
+void persist_syscheck_msg(const char *id, Operation_t operation, const char *index, const cJSON* _msg, uint64_t version, int sync_flag) {
     if (syscheck.enable_synchronization) {
         char* msg = cJSON_PrintUnformatted(_msg);
 
         mdebug2(FIM_PERSIST, msg);
 
-        asp_persist_diff(syscheck.sync_handle, id, operation, index, msg, version);
+        asp_persist_diff(syscheck.sync_handle, id, operation, index, msg, version, sync_flag);
 
         os_free(msg);
     } else {
