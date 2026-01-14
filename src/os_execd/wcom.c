@@ -252,18 +252,8 @@ size_t wcom_reload(char ** output) {
 #ifndef WIN32
         char *exec_cmd[4] = {NULL};
 
-        if (waccess("active-response/bin/restart.sh", F_OK) == 0) {
-            exec_cmd[0] = "active-response/bin/restart.sh";
-#ifdef CLIENT
-            exec_cmd[1] = "agent";
-#else
-            exec_cmd[1] = "manager";
-#endif
-            exec_cmd[2] = "reload";
-        } else {
-            exec_cmd[0] = "bin/wazuh-control";
-            exec_cmd[1] = "reload";
-        }
+        exec_cmd[0] = "bin/wazuh-control";
+        exec_cmd[1] = "reload";
 
         switch (fork()) {
             case -1:
