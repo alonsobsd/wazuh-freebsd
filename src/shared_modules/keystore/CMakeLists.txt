@@ -28,6 +28,7 @@ if (NOT SHARED_MODULES)
 endif()
 
 include_directories(include)
+include_directories($ENV{LOCALBASE}/include/libepoll-shim)
 include_directories(src)
 include_directories(${SRC_FOLDER}/external/rocksdb/include)
 include_directories(${SRC_FOLDER}/external/openssl/include)
@@ -40,7 +41,7 @@ link_directories(${SRC_FOLDER}/external/rocksdb/build)
 
 add_library(keystore STATIC ${KEYSTORE_SRC})
 
-target_link_libraries(keystore rocksdb wazuhext)
+target_link_libraries(keystore rocksdb epoll-shim wazuhext)
 
 add_executable(wazuh-keystore src/main.cpp)
 
