@@ -1,0 +1,43 @@
+<!--
+  -  FreeBSD decoders
+  -  Author: Alonso Cardenas
+  -  Copyright (C) 2023 Alonso Cardenas <acm@FreeBSD.org>
+  -  You can redistribute it and/or modify it under the terms of BSD 3-Clause License.
+-->
+
+<!--
+2023-12-12 12:41:04 [root:useradd] test(1002):test(1002):User &:/home/prueba:/bin/sh
+2023-12-12 12:42:02 [root:groupadd] test(1002)
+2023-12-12 12:43:30 [root:usermod] test(1002):test(1002):User test:/home/prueba:/bin/sh
+2023-12-12 12:44:40 [root:userdel] test(1002) account removed
+-->
+
+<decoder name="userlog">
+  <type>syslog</type>
+  <parent>windows-date-format</parent>
+  <regex>^(\d\d\d\d-\d\d-\d\d) (\d\d:\d\d:\d\d) [(\w+):(\w+)] (\.+)</regex>
+  <order>date, time, user, action, extra_data</order>
+</decoder>
+
+<!--
+Dec 13 20:04:00 ifrit pkg[51226]: appjail-devel-2.9.0.20231111,1 installed
+Dec 13 20:04:00 ifrit pkg[51226]: appjail-devel-2.9.0.20231111,1 deinstalled
+Dec 13 20:04:00 ifrit pkg[31977]: appjail-devel upgraded: 2.9.0.20231111,1 -> 2.9.0.20231115,1
+Dec 15 20:04:00 ifrit pkg[31977]: appjail-devel reinstalled: 2.9.0.20231111,1 -> 2.9.0.20231111,1
+-->
+
+<decoder name="pkg">
+   <program_name>pkg</program_name>
+</decoder>
+
+<decoder name="pkg-decoder">
+  <parent>pkg</parent>
+  <regex>(\S+) (\w+)$</regex>
+  <order>extra_data, action</order>
+</decoder>
+
+<decoder name="pkg-decoder">
+  <parent>pkg</parent>
+  <regex>(\S+) (\w+): (\S+ -> \S+)$</regex>
+  <order>package, action, extra_data</order>
+</decoder>
