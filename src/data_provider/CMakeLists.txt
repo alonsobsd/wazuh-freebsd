@@ -104,7 +104,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   include_directories(${CMAKE_SOURCE_DIR}/src/extended_sources/wrappers/unix/darwin)
 endif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 
-
 if(CMAKE_SYSTEM_NAME STREQUAL "HP-UX")
   link_directories(${INSTALL_PREFIX}/lib)
 endif(CMAKE_SYSTEM_NAME STREQUAL "HP-UX")
@@ -118,6 +117,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   include_directories(${CMAKE_SOURCE_DIR}/src/extended_sources/wrappers/unix/)
   include_directories(${CMAKE_SOURCE_DIR}/src/extended_sources/wrappers/unix/darwin)
 endif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+  include_directories(${CMAKE_SOURCE_DIR}/src/extended_sources/wrappers/unix/)
+  include_directories(${CMAKE_SOURCE_DIR}/src/extended_sources/wrappers/unix/freebsd)
+endif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 
 link_directories(${SRC_FOLDER})
 link_directories(${SRC_FOLDER}/external/sqlite/)
@@ -210,6 +214,7 @@ endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR
    CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR
+   CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR
    CMAKE_SYSTEM_NAME STREQUAL "Windows")
   add_subdirectory(src/extended_sources)
 endif()
@@ -250,7 +255,7 @@ elseif(APPLE)
   target_link_libraries(sysinfo cjson ${SRC_FOLDER}/external/libplist/bin/lib/libplist-2.0.a ${iokit_lib} ${corefoundation_lib} groups users services browser_extensions)
 endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
-target_link_libraries(sysinfo wazuhext)
+target_link_libraries(sysinfo nghttp2 wazuhext users groups)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(CURL_DEP "wazuhext")
