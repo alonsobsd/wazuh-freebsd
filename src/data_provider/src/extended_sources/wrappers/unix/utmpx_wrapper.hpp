@@ -18,11 +18,12 @@ class UtmpxWrapper : public IUtmpxWrapper
     public:
         /// @brief Sets the utmpx file to be used by the library functions.
         /// @param file Path to the utmpx file.
+#if !defined(__FreeBSD__)
         void utmpxname(const char* file) override
         {
             ::utmpxname(file);
         }
-
+#endif
         /// @brief Resets the input stream to the beginning of the utmpx file.
         void setutxent() override
         {
