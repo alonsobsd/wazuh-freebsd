@@ -176,6 +176,17 @@ namespace Utils
         return output.str();
     }
 
+    static std::string timeToSeconds(std::string& str) {
+        int seconds;
+        std::tm t;
+        std::istringstream ss(str);
+        ss >> std::get_time(&t, "%H:%M.%S");
+
+        seconds = t.tm_hour * 3600 + t.tm_min * 60 + t.tm_sec;
+
+        return std::to_string(seconds);
+    }
+
     /**
      * @brief Get seconds from epoch, since 1970-01-01 00:00:00 UTC.
      * @return seconds from epoch.
