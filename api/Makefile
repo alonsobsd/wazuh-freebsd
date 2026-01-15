@@ -9,11 +9,11 @@ INSTALLDIR       ?= /var/ossec
 
 MV_FILE        = mv -f
 RM_FILE        = rm -f
-INSTALL_DIR    = install -o root -g ${WAZUH_GROUP} -m 0750 -d
-INSTALL_RW_DIR = install -o root -g ${WAZUH_GROUP} -m 0770 -d
-INSTALL_EXEC   = install -o root -g ${WAZUH_GROUP} -m 0750
-INSTALL_FILE   = install -o root -g ${WAZUH_GROUP} -m 0640
-INSTALL_CONFIG_FILE   = install -o root -g ${WAZUH_GROUP} -m 0660
+INSTALL_DIR    = install -m 0750 -d
+INSTALL_RW_DIR = install -m 0770 -d
+INSTALL_EXEC   = install -m 0750
+INSTALL_FILE   = install -m 0640
+INSTALL_CONFIG_FILE   = install -m 0660
 PYTHON_BIN     = $(INSTALLDIR)/framework/python/bin/python3
 
 

@@ -28,6 +28,11 @@
 #include <thread>
 #include <unistd.h>
 
+#if defined(__FreeBSD__)
+#define SO_RCVBUFFORCE SO_RCVBUF
+#define SO_SNDBUFFORCE SO_SNDBUF
+#endif
+
 #ifdef INVALID_SOCKET
 #undef INVALID_SOCKET
 #endif
