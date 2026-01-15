@@ -1,0 +1,86 @@
+<!--
+  -  FreeBSD ruleset
+  -  Created by Alonso Cardenas
+  -  Copyright (C) 2023-2026, Alonso Cardenas <acm@FreeBSD.org>
+  -  You can redistribute it and/or modify it under the terms of BSD 3-Clause License.
+-->
+
+<!--
+    ID range: 100000 - 100099
+-->
+<group name="freebsd,">
+  <rule id="100000" level="3">
+    <decoded_as>windows-date-format</decoded_as>
+    <action>useradd</action>
+    <description>A new user account has been added.</description>
+    <mitre>
+      <id>T1136.001</id>
+      <id>T1078.003</id>
+    </mitre>
+  </rule>
+  <rule id="100001" level="3">
+    <decoded_as>windows-date-format</decoded_as>
+    <action>usermod</action>
+    <description>An user account has been modified.</description>
+    <mitre>
+      <id>T1136.001</id>
+      <id>T1078.003</id>
+    </mitre>
+  </rule>
+  <rule id="100002" level="3">
+    <decoded_as>windows-date-format</decoded_as>
+    <action>userdel</action>
+    <description>An user account was deleted.</description>
+    <mitre>
+      <id>T1136.001</id>
+      <id>T1078.003</id>
+    </mitre>
+  </rule>
+  <rule id="100003" level="3">
+    <decoded_as>windows-date-format</decoded_as>
+    <action>groupadd</action>
+    <description>A new group has been added.</description>
+    <mitre>
+      <id>T1136.001</id>
+      <id>T1078.003</id>
+    </mitre>
+  </rule>
+  <rule id="100004" level="3">
+    <decoded_as>windows-date-format</decoded_as>
+    <action>groupmod</action>
+    <description>A group has been modified.</description>
+    <mitre>
+      <id>T1136.001</id>
+      <id>T1078.003</id>
+    </mitre>
+  </rule>
+  <rule id="100005" level="3">
+    <decoded_as>windows-date-format</decoded_as>
+    <action>groupdel</action>
+    <description>A group was deleted.</description>
+    <mitre>
+      <id>T1136.001</id>
+      <id>T1078.003</id>
+    </mitre>
+  </rule>
+  <rule id="100006" level="7">
+    <action>deinstalled</action>
+    <description>Pkg (FreeBSD Package) removed.</description>
+    <group>config_changed,pci_dss_10.6.1,pci_dss_10.2.7,gpg13_4.10,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6,nist_800_53_AU.14,tsc_CC7.2,tsc_CC7.3,tsc_CC6.8,tsc_CC8.1,</group>
+  </rule>
+  <rule id="100007" level="7">
+    <action>installed</action>
+    <description>Pkg (FreeBSD Package) installed.</description>
+    <group>config_changed,pci_dss_10.6.1,pci_dss_10.2.7,gpg13_4.10,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6,nist_800_53_AU.14,tsc_CC7.2,tsc_CC7.3,tsc_CC6.8,tsc_CC8.1,</group>
+  </rule>
+  <rule id="100008" level="7">
+    <action>reinstalled</action>
+    <description>Pkg (FreeBSD Package) reinstalled.</description>
+    <group>config_changed,pci_dss_10.6.1,pci_dss_10.2.7,gpg13_4.10,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6,nist_800_53_AU.14,tsc_CC7.2,tsc_CC7.3,tsc_CC6.8,tsc_CC8.1,</group>
+  </rule>
+  <rule id="100009" level="7">
+    <action>upgraded</action>
+    <description>Pkg (FreeBSD Package) upgraded.</description>
+    <group>config_changed,pci_dss_10.6.1,pci_dss_10.2.7,gpg13_4.10,gdpr_IV_35.7.d,hipaa_164.312.b,nist_800_53_AU.6,nist_800_53_AU.14,tsc_CC7.2,tsc_CC7.3,tsc_CC6.8,tsc_CC8.1,</group>
+  </rule>
+</group>
