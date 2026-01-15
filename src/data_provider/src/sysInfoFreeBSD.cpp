@@ -621,6 +621,7 @@ nlohmann::json SysInfo::getUsers() const
         userItem["user_uid_signed"] = user["uid_signed"];
         userItem["user_group_id_signed"] = user["gid_signed"];
         userItem["user_group_id"] = user["gid"];
+        userItem["user_password_hash_algorithm"] = user["hash_alg"];
 
         std::set<uid_t> uid {static_cast<uid_t>(user["uid"].get<int>())};
         auto collectedUsersGroups = userGroupsProvider.getGroupNamesByUid(uid);
@@ -711,7 +712,6 @@ nlohmann::json SysInfo::getUsers() const
         if (!matched)
         {
             userItem["user_password_expiration_date"] = 0;
-            userItem["user_password_hash_algorithm"] = UNKNOWN_VALUE;
             userItem["user_password_inactive_days"] = 0;
             userItem["user_password_last_change"] = 0;
             userItem["user_password_max_days_between_changes"] = 0;
