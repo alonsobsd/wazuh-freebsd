@@ -11,6 +11,7 @@ import signal
 import socket
 import time
 import typing
+import subprocess
 from contextvars import ContextVar
 from functools import lru_cache
 from glob import glob
@@ -282,7 +283,7 @@ def get_manager_status(cache=False) -> typing.Dict:
             # it means each process crashed and was not able to remove its own pidfile.
             data[process] = 'failed'
             for pid in pidfile:
-                if os.path.exists(os.path.join(proc_path, pidfile_regex.match(pid).group(1))):
+                if _check_pid_as_superman(pidfile_regex.match(pid).group(1)):
                     data[process] = 'running'
                     break
 
@@ -291,6 +292,13 @@ def get_manager_status(cache=False) -> typing.Dict:
 
     return data
 
+def _check_pid_as_superman(pid):
+    try:
+        subprocess.check_call(["/var/ossec/libexec/check_pid", pid])
+    except subprocess.CalledProcessError as e:
+        return False
+ 
+    return True
 
 def get_cluster_status() -> typing.Dict:
     """Get cluster status.

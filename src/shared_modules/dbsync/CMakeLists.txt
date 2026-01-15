@@ -82,7 +82,7 @@ elseif(UNIX AND NOT APPLE)
   endif(NOT CMAKE_SYSTEM_NAME STREQUAL "AIX" AND NOT CMAKE_SYSTEM_NAME STREQUAL "HP-UX")
 endif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 
-target_link_libraries(dbsync wazuhext)
+target_link_libraries(dbsync nghttp2 wazuhext)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   if(CMAKE_SYSTEM_NAME STREQUAL "AIX")

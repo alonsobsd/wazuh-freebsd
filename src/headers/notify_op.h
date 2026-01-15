@@ -24,7 +24,7 @@ typedef enum {
     WE_WRITE = 2
 } wevent_t;
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
 
 #include <sys/epoll.h>
 
@@ -43,7 +43,7 @@ static inline int wnotify_get(const wnotify_t * notify, int index, wevent_t * ev
     return notify->events[index].data.fd;
 }
 
-#elif defined(__MACH__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#elif defined(__MACH__) || defined(__OpenBSD__)
 
 #include <sys/types.h>
 #include <sys/event.h>
@@ -64,7 +64,7 @@ static inline int wnotify_get(const wnotify_t * notify, int index, wevent_t * ev
     return notify->events[index].ident;
 }
 
-#endif /* __linux__ */
+#endif /* __linux__ || __FreeBSD__ */
 
 #if defined(__linux__) || defined(__MACH__) || defined(__FreeBSD__) || defined(__OpenBSD__)
 

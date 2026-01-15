@@ -20,7 +20,9 @@ class IUtmpxWrapper
 
         /// @brief Sets the utmpx file to be used by the library functions.
         /// @param file Path to the utmpx file.
+#if !defined(__FreeBSD__)
         virtual void utmpxname(const char* file) = 0;
+#endif
 
         /// @brief Resets the input stream to the beginning of the utmpx file.
         virtual void setutxent() = 0;
