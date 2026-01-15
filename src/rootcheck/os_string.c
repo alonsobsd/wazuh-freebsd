@@ -43,6 +43,9 @@
 #include <locale.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#ifdef __FreeBSD__
+#define __LDPGSZ         4096
+#endif
 
 #ifdef SOLARIS
 #include <sys/exechdr.h>

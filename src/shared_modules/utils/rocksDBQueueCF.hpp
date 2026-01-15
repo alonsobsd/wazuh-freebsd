@@ -203,7 +203,7 @@ public:
                     m_db->Delete(rocksdb::WriteOptions(), std::string(id) + "_" + std::to_string(index));
                 !status.ok())
             {
-                throw std::runtime_error("Failed to dequeue element: " + index);
+                throw std::runtime_error("Failed to dequeue element: " + std::to_string(index));
             }
             else
             {
@@ -302,7 +302,7 @@ public:
                 {
                     if (status != rocksdb::Status::NotFound())
                     {
-                        throw std::runtime_error("Failed to get elements, error: " + status.code());
+                        throw std::runtime_error("Failed to get elements, error: " + std::to_string(status.code()));
                     }
                 }
                 ++index;
