@@ -624,6 +624,21 @@ nlohmann::json SysInfo::getUsers() const
         userItem["user_password_hash_algorithm"] = user["hash_alg"];
         userItem["user_password_expiration_date"] = user["expire"];
 
+        // Not supported by this platform
+        userItem["user_password_inactive_days"] = 0;
+        userItem["user_password_last_change"] = 0;
+        userItem["user_password_max_days_between_changes"] = 0;
+        userItem["user_password_min_days_between_changes"] = 0;
+        userItem["user_password_status"] = UNKNOWN_VALUE;
+        userItem["user_password_warning_days_before_expiration"] = 0;
+        userItem["user_roles"] = UNKNOWN_VALUE;
+        userItem["user_type"] = UNKNOWN_VALUE;
+        userItem["user_uuid"] = UNKNOWN_VALUE;
+        userItem["user_is_hidden"] = 0;
+        userItem["user_created"] = 0;
+        userItem["user_auth_failed_count"] = 0;
+        userItem["user_auth_failed_timestamp"] = 0;
+
         std::set<uid_t> uid {static_cast<uid_t>(user["uid"].get<int>())};
         auto collectedUsersGroups = userGroupsProvider.getGroupNamesByUid(uid);
 
@@ -647,18 +662,6 @@ nlohmann::json SysInfo::getUsers() const
 
             userItem["user_groups"] = accumGroups;
         }
-
-        // Only in windows
-        userItem["user_type"] = UNKNOWN_VALUE;
-
-        // Macos or windows
-        userItem["user_uuid"] = UNKNOWN_VALUE;
-
-        // Macos
-        userItem["user_is_hidden"] = 0;
-        userItem["user_created"] = 0;
-        userItem["user_auth_failed_count"] = 0;
-        userItem["user_auth_failed_timestamp"] = 0;
 
         auto matched = false;
         auto lastLogin = 0;
@@ -707,22 +710,6 @@ nlohmann::json SysInfo::getUsers() const
             userItem["process_pid"] = 0;
             userItem["user_last_login"] = 0;
         }
-
-        matched = false;
-
-        if (!matched)
-        {
-            userItem["user_password_inactive_days"] = 0;
-            userItem["user_password_last_change"] = 0;
-            userItem["user_password_max_days_between_changes"] = 0;
-            userItem["user_password_min_days_between_changes"] = 0;
-            userItem["user_password_status"] = UNKNOWN_VALUE;
-            userItem["user_password_warning_days_before_expiration"] = 0;
-        }
-
-
-        // By default, user is not sudoer.
-        userItem["user_roles"] = UNKNOWN_VALUE;
 
         result.push_back(std::move(userItem));
     }
