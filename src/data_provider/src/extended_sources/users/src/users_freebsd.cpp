@@ -68,6 +68,11 @@ nlohmann::json UsersProvider::genUserJson(const struct passwd* pwd, bool include
 
     r["pid_with_namespace"] = "0";
     r["include_remote"] = static_cast<int>(include_remote);
+    /*
+     * Linux uses sp_expire from spwd, which is not specifically for the
+     * password, but for the entire account.
+     */
+    r["expire"] = pwd->pw_change;
 
     return r;
 }
