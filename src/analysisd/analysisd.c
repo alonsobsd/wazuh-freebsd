@@ -238,11 +238,7 @@ pthread_mutex_t process_event_mutex = PTHREAD_MUTEX_INITIALIZER;
 /* Hourly alerts mutex */
 pthread_mutex_t hourly_alert_mutex = PTHREAD_MUTEX_INITIALIZER;
 /* hot reload mutes */
-#if defined(__FreeBSD__)
-static portable_rwlock_t g_hotreload_ruleset_mutex;
-#else
 static pthread_rwlock_t g_hotreload_ruleset_mutex;
-#endif
 
 /* Reported mutexes */
 static pthread_mutex_t writer_threads_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -847,15 +843,11 @@ int main_analysisd(int argc, char **argv)
     w_init_queues();
 
     /* Sync for event queues and API, for hot reload */
-#if defined(__FreeBSD__)
-    portable_rwlock_init(&g_hotreload_ruleset_mutex);
-#else
     pthread_rwlockattr_t rwlock_attr;
     pthread_rwlockattr_init(&rwlock_attr);
     pthread_rwlockattr_setkind_np(&rwlock_attr, PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP);
     pthread_rwlock_init(&g_hotreload_ruleset_mutex, &rwlock_attr);
     pthread_rwlockattr_destroy(&rwlock_attr);
-#endif
 
     // Start com request thread
     w_create_thread(asyscom_main, NULL);
@@ -1235,11 +1227,7 @@ void * ad_input_main(void * args) {
 
             result = -1;
             // take the ruleset
-#if defined(__FreeBSD__)
-            w_portable_rwlock_rdlock(&g_hotreload_ruleset_mutex);
-#else
             w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
-#endif
 
             if (msg[0] == SYSCHECK_MQ) {
                 if (!queue_full_ex(decode_queue_syscheck_input)) {
@@ -1439,11 +1427,7 @@ void * ad_input_main(void * args) {
                 }
             }
 
-#if defined(__FreeBSD__)
-            w_portable_rwlock_unlock_read(&g_hotreload_ruleset_mutex);
-#else
             w_rwlock_unlock(&g_hotreload_ruleset_mutex);
-#endif
 
             if (result == -1) {
                 if (!reported_eps_drop) {
@@ -1572,6 +1556,7 @@ void * w_decode_syscheck_thread(__attribute__((unused)) void * args){
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_syscheck_input), msg) {
             get_eps_credit();
+            w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
 
             int res = 0;
             os_calloc(1, sizeof(Eventinfo), lf);
@@ -1584,6 +1569,7 @@ void * w_decode_syscheck_thread(__attribute__((unused)) void * args){
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+                w_rwlock_unlock(&g_hotreload_ruleset_mutex);
                 continue;
             }
 
@@ -1604,11 +1590,13 @@ void * w_decode_syscheck_thread(__attribute__((unused)) void * args){
             }
 
             if (res == 1 && queue_push_ex_block(decode_queue_event_output, lf) == 0) {
+                w_rwlock_unlock(&g_hotreload_ruleset_mutex);
                 continue;
             } else {
                 /* We don't process syscheck events further */
                 w_free_event_info(lf);
             }
+            w_rwlock_unlock(&g_hotreload_ruleset_mutex);
         }
     }
 }
@@ -1622,6 +1610,7 @@ void * w_decode_syscollector_thread(__attribute__((unused)) void * args){
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_syscollector_input), msg) {
             get_eps_credit();
+            w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1633,6 +1622,7 @@ void * w_decode_syscollector_thread(__attribute__((unused)) void * args){
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+                w_rwlock_unlock(&g_hotreload_ruleset_mutex);
                 continue;
             }
 
@@ -1652,6 +1642,7 @@ void * w_decode_syscollector_thread(__attribute__((unused)) void * args){
                     w_free_event_info(lf);
                 }
             }
+            w_rwlock_unlock(&g_hotreload_ruleset_mutex);
         }
     }
 }
@@ -1664,6 +1655,7 @@ void * w_decode_rootcheck_thread(__attribute__((unused)) void * args){
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_rootcheck_input), msg) {
             get_eps_credit();
+            w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1675,6 +1667,7 @@ void * w_decode_rootcheck_thread(__attribute__((unused)) void * args){
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+                w_rwlock_unlock(&g_hotreload_ruleset_mutex);
                 continue;
             }
 
@@ -1694,6 +1687,7 @@ void * w_decode_rootcheck_thread(__attribute__((unused)) void * args){
                     w_free_event_info(lf);
                 }
             }
+            w_rwlock_unlock(&g_hotreload_ruleset_mutex);
         }
     }
 }
@@ -1707,6 +1701,7 @@ void * w_decode_sca_thread(__attribute__((unused)) void * args){
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_sca_input), msg) {
             get_eps_credit();
+            w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1718,6 +1713,7 @@ void * w_decode_sca_thread(__attribute__((unused)) void * args){
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+                w_rwlock_unlock(&g_hotreload_ruleset_mutex);
                 continue;
             }
 
@@ -1737,6 +1733,7 @@ void * w_decode_sca_thread(__attribute__((unused)) void * args){
                     w_free_event_info(lf);
                 }
             }
+            w_rwlock_unlock(&g_hotreload_ruleset_mutex);
         }
     }
 }
@@ -1749,6 +1746,7 @@ void * w_decode_hostinfo_thread(__attribute__((unused)) void * args){
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_hostinfo_input), msg) {
             get_eps_credit();
+            w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1760,6 +1758,7 @@ void * w_decode_hostinfo_thread(__attribute__((unused)) void * args){
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+                w_rwlock_unlock(&g_hotreload_ruleset_mutex);
                 continue;
             }
 
@@ -1779,6 +1778,7 @@ void * w_decode_hostinfo_thread(__attribute__((unused)) void * args){
                     w_free_event_info(lf);
                 }
             }
+            w_rwlock_unlock(&g_hotreload_ruleset_mutex);
         }
     }
 }
@@ -1795,6 +1795,7 @@ void * w_decode_event_thread(__attribute__((unused)) void * args){
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_event_input), msg) {
             get_eps_credit();
+            w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1806,6 +1807,7 @@ void * w_decode_event_thread(__attribute__((unused)) void * args){
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+                w_rwlock_unlock(&g_hotreload_ruleset_mutex);
                 continue;
             }
 
@@ -1814,6 +1816,7 @@ void * w_decode_event_thread(__attribute__((unused)) void * args){
                 if (!DecodeCiscat(lf, &sock)) {
                     w_free_event_info(lf);
                     free(msg);
+                    w_rwlock_unlock(&g_hotreload_ruleset_mutex);
                     continue;
                 }
             } else {
@@ -1834,6 +1837,7 @@ void * w_decode_event_thread(__attribute__((unused)) void * args){
             if (queue_push_ex_block(decode_queue_event_output, lf) < 0) {
                 Free_Eventinfo(lf);
             }
+            w_rwlock_unlock(&g_hotreload_ruleset_mutex);
         }
     }
 }
@@ -1846,6 +1850,7 @@ void * w_decode_winevt_thread(__attribute__((unused)) void * args) {
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_winevt_input), msg) {
             get_eps_credit();
+            w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1857,6 +1862,7 @@ void * w_decode_winevt_thread(__attribute__((unused)) void * args) {
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+                w_rwlock_unlock(&g_hotreload_ruleset_mutex);
                 continue;
             }
 
@@ -1876,6 +1882,7 @@ void * w_decode_winevt_thread(__attribute__((unused)) void * args) {
                     w_free_event_info(lf);
                 }
             }
+            w_rwlock_unlock(&g_hotreload_ruleset_mutex);
         }
     }
 }
@@ -1888,6 +1895,7 @@ void * w_dispatch_dbsync_thread(__attribute__((unused)) void * args) {
     for (;;) {
         if (msg = queue_pop_ex(dispatch_dbsync_input), msg) {
             get_eps_credit();
+            w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1897,6 +1905,7 @@ void * w_dispatch_dbsync_thread(__attribute__((unused)) void * args) {
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+                w_rwlock_unlock(&g_hotreload_ruleset_mutex);
                 continue;
             }
 
@@ -1906,6 +1915,7 @@ void * w_dispatch_dbsync_thread(__attribute__((unused)) void * args) {
 
             DispatchDBSync(&ctx, lf);
             Free_Eventinfo(lf);
+            w_rwlock_unlock(&g_hotreload_ruleset_mutex);
         }
     }
 
@@ -1919,6 +1929,9 @@ void * w_dispatch_upgrade_module_thread(__attribute__((unused)) void * args) {
     while (true) {
         if (msg = queue_pop_ex(upgrade_module_input), msg) {
             get_eps_credit();
+            // Just for sync
+            w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+            w_rwlock_unlock(&g_hotreload_ruleset_mutex);
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -2481,27 +2494,12 @@ bool w_hotreload_reload(OSList * list_msg) {
 
     // Sync thread for reloading ruleset,
     mdebug1("Blocking input threads to reload ruleset");
-#if defined(__FreeBSD__)
-    w_portable_rwlock_wrlock(&g_hotreload_ruleset_mutex);
-#else
     w_rwlock_wrlock(&g_hotreload_ruleset_mutex);
-#endif
 
-    // Wait for a clean pipeline
-    mdebug1("Wait for pipeline to be clean");
-    // wait until queues are empty, then verify emptiness persists for one cycle
-    do {
-        // step 1: block until empty
-        while (!w_hotreload_queues_are_empty()) {
-            mdebug2("Pipeline not clean, waiting...");
-            usleep(1000);
-        }
-
-        // step 2: one more wait, then re-check
-        mdebug2("Queues empty, verifying persistence...");
-        usleep(3000);
-
-    } while (!w_hotreload_queues_are_empty());
+    // Drain queues if still some events are pending
+    mdebug1("Clearing pending events from queues");
+    w_hotreload_drain_queues();
+    usleep(5000);
 
     minfo("Reloading ruleset");
 
@@ -2512,13 +2510,10 @@ bool w_hotreload_reload(OSList * list_msg) {
     w_hotreload_reload_internal_decoders();
 
     // Run the new ruleset
-#if defined(__FreeBSD__)
-    w_portable_rwlock_unlock_write(&g_hotreload_ruleset_mutex);
-#else
-    w_rwlock_unlock(&g_hotreload_ruleset_mutex);
-#endif
-
     mdebug1("Unblocking input threads (Enable new ruleset)");
+    w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+
+    minfo("Ruleset reloaded successfully");
 
     // Free the old ruleset
     w_hotreload_clean_ruleset(&old_ruleset);
@@ -2540,15 +2535,43 @@ void w_hotreload_reload_internal_decoders() {
     fim_hot_reload();
 }
 
-bool w_hotreload_queues_are_empty() {
+/**
+ * @brief Drains all events from a specific queue
+ * @param queue The queue to drain
+ */
+static void w_hotreload_drain_eventinfo_queue(w_queue_t *queue) {
+    Eventinfo *event;
+    while ((event = try_queue_pop_ex(queue)) != NULL) {
+        Free_Eventinfo(event);
+    }
+}
 
-    return (queue_empty_ex(decode_queue_event_output) && queue_empty_ex(decode_queue_syscheck_input) &&
-            queue_empty_ex(decode_queue_syscollector_input) && queue_empty_ex(decode_queue_rootcheck_input) &&
-            queue_empty_ex(decode_queue_sca_input) && queue_empty_ex(decode_queue_hostinfo_input) &&
-            queue_empty_ex(decode_queue_winevt_input) && queue_empty_ex(dispatch_dbsync_input) &&
-            queue_empty_ex(upgrade_module_input) && queue_empty_ex(writer_queue_log) && queue_empty_ex(writer_queue) &&
-            queue_empty_ex(decode_queue_event_input) && queue_empty_ex(writer_queue_log_statistical) &&
-            queue_empty_ex(writer_queue_log_firewall));
+void w_hotreload_drain_queues() {
+    // blocked during hotreload so we don't drain :
+    // - decode_queue_syscheck_input
+    // - decode_queue_syscollector_input
+    // - decode_queue_rootcheck_input
+    // - decode_queue_sca_input
+    // - decode_queue_hostinfo_input
+    // - decode_queue_winevt_input
+    // - dispatch_dbsync_input
+    // - upgrade_module_input
+    // - decode_queue_event_input
+
+    // Intermediary queues to drain
+    w_queue_t *queues_to_drain[] = {
+        decode_queue_event_output,
+        writer_queue_log,
+        writer_queue,
+        writer_queue_log_statistical,
+        writer_queue_log_firewall,
+        NULL
+    };
+
+    // Drain all queues
+    for (int i = 0; queues_to_drain[i] != NULL; i++) {
+        w_hotreload_drain_eventinfo_queue(queues_to_drain[i]);
+    }
 }
 
 w_hotreload_ruleset_data_t * w_hotreload_switch_ruleset(w_hotreload_ruleset_data_t * new_ruleset) {
