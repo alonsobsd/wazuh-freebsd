@@ -19,6 +19,7 @@ endif()
 
 # Include directories
 include_directories(include)
+include_directories($ENV{LOCALBASE}/include/libepoll-shim)
 
 include_directories(${SRC_FOLDER})
 include_directories(${SRC_FOLDER}/headers)
@@ -42,7 +43,7 @@ add_library(router SHARED
     ${ROUTER_SRC}
     )
 
-target_link_libraries(router gcc_s flatbuffers wazuhext simdjson)
+target_link_libraries(router gcc_s flatbuffers wazuhext simdjson epoll-shim)
 
 set_target_properties(router PROPERTIES
         BUILD_RPATH_USE_ORIGIN TRUE
