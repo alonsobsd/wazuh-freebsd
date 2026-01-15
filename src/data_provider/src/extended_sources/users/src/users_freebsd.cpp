@@ -7,7 +7,10 @@
  * Foundation.
  */
 
+#include <err.h>
 #include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
 #include <set>
 #include <string>
 #include <map>
@@ -15,6 +18,8 @@
 
 #include "users_freebsd.hpp"
 #include "passwd_wrapper.hpp"
+
+const char *    get_password_hash_algorithm(const char *pw_passwd);
 
 constexpr size_t MAX_GETPW_R_BUF_SIZE = 16 * 1024;
 
@@ -54,6 +59,12 @@ nlohmann::json UsersProvider::genUserJson(const struct passwd* pwd, bool include
     r["description"] = (pwd->pw_gecos != nullptr) ? pwd->pw_gecos : "";
     r["directory"] = (pwd->pw_dir != nullptr) ? pwd->pw_dir : "";
     r["shell"] = (pwd->pw_shell != nullptr) ? pwd->pw_shell : "";
+
+    const char *hash_alg;
+    if ((hash_alg = get_password_hash_algorithm(pwd->pw_passwd)) != NULL)
+        r["hash_alg"] = hash_alg;
+    else
+        r["hash_alg"] = "";
 
     r["pid_with_namespace"] = "0";
     r["include_remote"] = static_cast<int>(include_remote);
@@ -100,4 +111,92 @@ nlohmann::json UsersProvider::collectUsers(const std::set<std::string>& username
     m_passwdWrapper->endpwent();
 
     return results;
+}
+
+const char *
+get_password_hash_algorithm(const char *pw_passwd)
+{
+    /* Doesn't make much sense to read from insecure DB. */
+    if (getuid() != 0)
+        return NULL;
+
+    /* Password is empty. */
+    if (pw_passwd[0] == 0)
+        return NULL;
+
+    char *pptr, *pptr_aux;
+
+    if ((pptr = strdup(pw_passwd)) == NULL) {
+        warn("strdup");
+        return NULL;
+    }
+
+    const char *locked_str = "*LOCKED*";
+
+    pptr_aux = pptr;
+
+    /* A locked account can still have a password. */
+    if (strstr(pptr_aux, locked_str) != NULL)
+        pptr_aux += strlen(locked_str);
+
+    /* Auth locked. */
+    if (pptr_aux[0] == '*' && pptr_aux[1] == '\0') {
+        free(pptr);
+
+        return NULL;
+    }
+
+    /* Password is empty (again). */
+    if (pptr_aux[0] == 0) {
+        free(pptr);
+
+        return NULL;
+    }
+
+    if (pptr_aux[0] == '_') {
+        free(pptr);
+
+        return "DES-Extended";
+    } else if (pptr_aux[0] == '$') {
+        const char *hash_algorithm = NULL;
+
+        if (pptr_aux[1] == '\0') {
+            free(pptr);
+
+            return hash_algorithm;
+        }
+
+        switch (pptr_aux[1]) {
+        case '1':
+            hash_algorithm = "MD5";
+            break;
+        case '2':
+            hash_algorithm = "Blowfish";
+            break;
+        case '3':
+            hash_algorithm = "NT-Hash";
+            break;
+        case '5':
+            hash_algorithm = "SHA-256";
+            break;
+        case '6':
+            hash_algorithm = "SHA-512";
+            break;
+        }
+
+        /* Basic check before returning. */
+        if (pptr_aux[2] != '$') {
+            free(pptr);
+
+            return NULL;
+        }
+
+        free(pptr);
+
+        return hash_algorithm;
+    } else {
+        free(pptr);
+
+        return "DES";
+    }
 }
