@@ -18,6 +18,8 @@ else()
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../wrappers/unix/linux)
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../wrappers/unix/darwin)
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../wrappers/unix/freebsd)
   endif()
 endif()
 
@@ -40,6 +42,9 @@ else()
 
     list(APPEND SRC_FILES src/users_darwin.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../wrappers/unix/darwin/od_wrapper.mm)
     set(PLATFORM_LIBS_USERS ${OPEN_DIRECTORY} ${FOUNDATION})
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    list(APPEND SRC_FILES src/logged_in_users_freebsd.cpp)
+    list(APPEND SRC_FILES src/users_freebsd.cpp)
   endif()
 endif()
 

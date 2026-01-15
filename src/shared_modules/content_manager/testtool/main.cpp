@@ -1,7 +1,7 @@
+#include "contentRegister.hpp"
 #include "HTTPRequest.hpp"
 #include "UNIXSocketRequest.hpp"
 #include "contentManager.hpp"
-#include "contentRegister.hpp"
 #include "defs.h"
 #include <chrono>
 #include <iostream>
