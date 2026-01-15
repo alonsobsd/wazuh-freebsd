@@ -18,6 +18,8 @@ else()
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../wrappers/unix/linux)
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../wrappers/unix/darwin)
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../wrappers/unix/freebsd)
   endif()
 endif()
 
@@ -35,6 +37,10 @@ else()
         list(APPEND SRC_FILES
           src/groups_linux.cpp
           src/user_groups_linux.cpp)
+    elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+        list(APPEND SRC_FILES
+          src/groups_freebsd.cpp
+          src/user_groups_freebsd.cpp)
     elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
         find_library(OPEN_DIRECTORY OpenDirectory)
         find_library(FOUNDATION Foundation)

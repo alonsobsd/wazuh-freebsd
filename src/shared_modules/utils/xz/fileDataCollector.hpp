@@ -59,7 +59,7 @@ namespace Xz
         /*! @copydoc IDataCollector::finish() */
         void finish() override
         {
-            m_file.close();
+            (m_file.close)();
         }
 
         /*! @copydoc IDataCollector::setBuffer() */
