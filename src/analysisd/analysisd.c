@@ -237,7 +237,11 @@ pthread_mutex_t process_event_mutex = PTHREAD_MUTEX_INITIALIZER;
 /* Hourly alerts mutex */
 pthread_mutex_t hourly_alert_mutex = PTHREAD_MUTEX_INITIALIZER;
 /* hot reload mutes */
+#if defined(__FreeBSD__)
+static portable_rwlock_t g_hotreload_ruleset_mutex;
+#else
 static pthread_rwlock_t g_hotreload_ruleset_mutex;
+#endif
 
 /* Reported mutexes */
 static pthread_mutex_t writer_threads_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -842,11 +846,15 @@ int main_analysisd(int argc, char **argv)
     w_init_queues();
 
     /* Sync for event queues and API, for hot reload */
+#if defined(__FreeBSD__)
+   portable_rwlock_init(&g_hotreload_ruleset_mutex);
+#else
     pthread_rwlockattr_t rwlock_attr;
     pthread_rwlockattr_init(&rwlock_attr);
     pthread_rwlockattr_setkind_np(&rwlock_attr, PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP);
     pthread_rwlock_init(&g_hotreload_ruleset_mutex, &rwlock_attr);
     pthread_rwlockattr_destroy(&rwlock_attr);
+#endif
 
     // Start com request thread
     w_create_thread(asyscom_main, NULL);
@@ -1226,7 +1234,11 @@ void * ad_input_main(void * args) {
 
             result = -1;
             // take the ruleset
+#if defined(__FreeBSD__)
+            w_portable_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#endif
 
             if (msg[0] == SYSCHECK_MQ) {
                 if (!queue_full_ex(decode_queue_syscheck_input)) {
@@ -1426,7 +1438,11 @@ void * ad_input_main(void * args) {
                 }
             }
 
+#if defined(__FreeBSD__)
+            w_portable_rwlock_unlock_read(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
 
             if (result == -1) {
                 if (!reported_eps_drop) {
@@ -1555,7 +1571,11 @@ void * w_decode_syscheck_thread(__attribute__((unused)) void * args){
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_syscheck_input), msg) {
             get_eps_credit();
+#if defined(__FreeBSD__)
+            w_portable_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#endif
 
             int res = 0;
             os_calloc(1, sizeof(Eventinfo), lf);
@@ -1568,7 +1588,11 @@ void * w_decode_syscheck_thread(__attribute__((unused)) void * args){
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+#if defined(__FreeBSD__)
+                w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
                 w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
                 continue;
             }
 
@@ -1589,13 +1613,21 @@ void * w_decode_syscheck_thread(__attribute__((unused)) void * args){
             }
 
             if (res == 1 && queue_push_ex_block(decode_queue_event_output, lf) == 0) {
+#if defined(__FreeBSD__)
+                w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
                 w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
                 continue;
             } else {
                 /* We don't process syscheck events further */
                 w_free_event_info(lf);
             }
+#if defined(__FreeBSD__)
+            w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
         }
     }
 }
@@ -1609,7 +1641,11 @@ void * w_decode_syscollector_thread(__attribute__((unused)) void * args){
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_syscollector_input), msg) {
             get_eps_credit();
+#if defined(__FreeBSD__)
+            w_portable_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#endif
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1621,7 +1657,11 @@ void * w_decode_syscollector_thread(__attribute__((unused)) void * args){
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+#if defined(__FreeBSD__)
+                w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
                 w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
                 continue;
             }
 
@@ -1641,7 +1681,11 @@ void * w_decode_syscollector_thread(__attribute__((unused)) void * args){
                     w_free_event_info(lf);
                 }
             }
+#if defined(__FreeBSD__)
+            w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
         }
     }
 }
@@ -1654,7 +1698,11 @@ void * w_decode_rootcheck_thread(__attribute__((unused)) void * args){
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_rootcheck_input), msg) {
             get_eps_credit();
+#if defined(__FreeBSD__)
+            w_portable_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#endif
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1666,7 +1714,11 @@ void * w_decode_rootcheck_thread(__attribute__((unused)) void * args){
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+#if defined(__FreeBSD__)
+                w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
                 w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
                 continue;
             }
 
@@ -1686,7 +1738,11 @@ void * w_decode_rootcheck_thread(__attribute__((unused)) void * args){
                     w_free_event_info(lf);
                 }
             }
+#if defined(__FreeBSD__)
+            w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
         }
     }
 }
@@ -1700,7 +1756,11 @@ void * w_decode_sca_thread(__attribute__((unused)) void * args){
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_sca_input), msg) {
             get_eps_credit();
+#if defined(__FreeBSD__)
+            w_portable_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#endif
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1712,7 +1772,11 @@ void * w_decode_sca_thread(__attribute__((unused)) void * args){
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+#if defined(__FreeBSD__)
+                w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
                 w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
                 continue;
             }
 
@@ -1732,7 +1796,11 @@ void * w_decode_sca_thread(__attribute__((unused)) void * args){
                     w_free_event_info(lf);
                 }
             }
+#if defined(__FreeBSD__)
+            w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
         }
     }
 }
@@ -1745,7 +1813,11 @@ void * w_decode_hostinfo_thread(__attribute__((unused)) void * args){
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_hostinfo_input), msg) {
             get_eps_credit();
+#if defined(__FreeBSD__)
+            w_portable_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#endif
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1757,7 +1829,11 @@ void * w_decode_hostinfo_thread(__attribute__((unused)) void * args){
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+#if defined(__FreeBSD__)
+                w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
                 w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
                 continue;
             }
 
@@ -1777,7 +1853,11 @@ void * w_decode_hostinfo_thread(__attribute__((unused)) void * args){
                     w_free_event_info(lf);
                 }
             }
+#if defined(__FreeBSD__)
+            w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
         }
     }
 }
@@ -1794,7 +1874,11 @@ void * w_decode_event_thread(__attribute__((unused)) void * args){
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_event_input), msg) {
             get_eps_credit();
+#if defined(__FreeBSD__)
+            w_portable_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#endif
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1806,7 +1890,11 @@ void * w_decode_event_thread(__attribute__((unused)) void * args){
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+#if defined(__FreeBSD__)
+                w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
                 w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
                 continue;
             }
 
@@ -1815,7 +1903,11 @@ void * w_decode_event_thread(__attribute__((unused)) void * args){
                 if (!DecodeCiscat(lf, &sock)) {
                     w_free_event_info(lf);
                     free(msg);
+#if defined(__FreeBSD__)
+                    w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
                     w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
                     continue;
                 }
             } else {
@@ -1836,7 +1928,11 @@ void * w_decode_event_thread(__attribute__((unused)) void * args){
             if (queue_push_ex_block(decode_queue_event_output, lf) < 0) {
                 Free_Eventinfo(lf);
             }
+#if defined(__FreeBSD__)
+            w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
         }
     }
 }
@@ -1849,7 +1945,11 @@ void * w_decode_winevt_thread(__attribute__((unused)) void * args) {
         /* Receive message from queue */
         if (msg = queue_pop_ex(decode_queue_winevt_input), msg) {
             get_eps_credit();
+#if defined(__FreeBSD__)
+            w_portable_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#endif
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1861,7 +1961,11 @@ void * w_decode_winevt_thread(__attribute__((unused)) void * args) {
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+#if defined(__FreeBSD__)
+                w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
                 w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
                 continue;
             }
 
@@ -1881,7 +1985,11 @@ void * w_decode_winevt_thread(__attribute__((unused)) void * args) {
                     w_free_event_info(lf);
                 }
             }
+#if defined(__FreeBSD__)
+            w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
         }
     }
 }
@@ -1894,7 +2002,11 @@ void * w_dispatch_dbsync_thread(__attribute__((unused)) void * args) {
     for (;;) {
         if (msg = queue_pop_ex(dispatch_dbsync_input), msg) {
             get_eps_credit();
+#if defined(__FreeBSD__)
+            w_portable_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+#endif
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -1904,7 +2016,11 @@ void * w_dispatch_dbsync_thread(__attribute__((unused)) void * args) {
                 merror(IMSG_ERROR, msg);
                 Free_Eventinfo(lf);
                 free(msg);
+#if defined(__FreeBSD__)
+                w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
                 w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
                 continue;
             }
 
@@ -1914,7 +2030,11 @@ void * w_dispatch_dbsync_thread(__attribute__((unused)) void * args) {
 
             DispatchDBSync(&ctx, lf);
             Free_Eventinfo(lf);
+#if defined(__FreeBSD__)
+            w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
         }
     }
 
@@ -1929,8 +2049,13 @@ void * w_dispatch_upgrade_module_thread(__attribute__((unused)) void * args) {
         if (msg = queue_pop_ex(upgrade_module_input), msg) {
             get_eps_credit();
             // Just for sync
+#if defined(__FreeBSD__)
+            w_portable_rwlock_rdlock(&g_hotreload_ruleset_mutex);
+            w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
             w_rwlock_rdlock(&g_hotreload_ruleset_mutex);
             w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
 
             os_calloc(1, sizeof(Eventinfo), lf);
             os_calloc(Config.decoder_order_size, sizeof(DynamicField), lf->fields);
@@ -2482,7 +2607,11 @@ bool w_hotreload_reload(OSList * list_msg) {
 
     // Sync thread for reloading ruleset,
     mdebug1("Blocking input threads to reload ruleset");
+#if defined(__FreeBSD__)
+    w_portable_rwlock_wrlock(&g_hotreload_ruleset_mutex);
+#else
     w_rwlock_wrlock(&g_hotreload_ruleset_mutex);
+#endif
 
     // Drain queues if still some events are pending
     mdebug1("Clearing pending events from queues");
@@ -2499,7 +2628,11 @@ bool w_hotreload_reload(OSList * list_msg) {
 
     // Run the new ruleset
     mdebug1("Unblocking input threads (Enable new ruleset)");
+#if defined(__FreeBSD__)
+    w_portable_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#else
     w_rwlock_unlock(&g_hotreload_ruleset_mutex);
+#endif
 
     minfo("Ruleset reloaded successfully");
 
