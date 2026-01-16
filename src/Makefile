@@ -2349,13 +2349,21 @@ os_auth_c := ${wildcard os_auth/*.c}
 os_auth_o := $(os_auth_c:.c=.o)
 
 os_auth/%.o: os_auth/%.c
+ifeq (${uname_S},FreeBSD)
 	${OSSEC_CC} -I${LOCALBASE}/include/libepoll-shim ${OSSEC_CFLAGS} -I./os_auth -DARGV0=\"wazuh-authd\" -c $^ -o $@
+else
+	${OSSEC_CC} ${OSSEC_CFLAGS} -I./os_auth -DARGV0=\"wazuh-authd\" -c $^ -o $@
+endif
 
 agent-auth: addagent/validate.o os_auth/main-client.o os_auth/ssl.o os_auth/check_cert.o
 	${OSSEC_CCBIN} ${OSSEC_LDFLAGS} $^ ${OSSEC_LIBS} -o $@
 
 wazuh-authd: addagent/validate.o os_auth/main-server.o os_auth/local-server.o os_auth/ssl.o os_auth/check_cert.o os_auth/config.o os_auth/authcom.o os_auth/auth.o os_auth/key_request.o os_auth/generate_cert.o
+ifeq (${uname_S},FreeBSD)
 	${OSSEC_CCBIN} ${OSSEC_LDFLAGS} $^ ${OSSEC_LIBS} -lepoll-shim -o $@
+else
+	${OSSEC_CCBIN} ${OSSEC_LDFLAGS} $^ ${OSSEC_LIBS} -o $@
+endif
 
 #### integratord #####
 
@@ -2516,7 +2524,11 @@ build_python: $(WAZUHEXT_LIB)
 
 install_python:
 ifneq (,$(wildcard ${EXTERNAL_CPYTHON}))
+ifeq (${uname_S},FreeBSD)
 	cd ${EXTERNAL_CPYTHON} && export WPATH_LIB=${INSTALLDIR}/lib && export SOURCE_PATH=${ROUTE_PATH} && export WAZUH_FFI_PATH=${EXTERNAL_LIBFFI} && export LD_LIBRARY_PATH=${ROUTE_PATH} && ${MAKE} install
+else
+	cd ${EXTERNAL_CPYTHON} && export WPATH_LIB=${INSTALLDIR}/lib && export SOURCE_PATH=${ROUTE_PATH} && export WAZUH_FFI_PATH=${EXTERNAL_LIBFFI} && ${MAKE} install
+endif
 else
 	mkdir -p ${WPYTHON_DIR}
 	cp external/${WPYTHON_TAR} ${WPYTHON_DIR}/${WPYTHON_TAR} && ${TAR} ${WPYTHON_DIR}/${WPYTHON_TAR} -C ${WPYTHON_DIR} && rm -rf ${WPYTHON_DIR}/${WPYTHON_TAR}
