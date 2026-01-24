@@ -17,3 +17,41 @@
   </rule>
 
 </group>
+
+<!-- Vulnerability detector -->
+<group name="vulnerability-detector,">
+  <rule id="100010" level="0">
+    <decoded_as>json</decoded_as>
+    <options>no_full_log</options>
+    <field name="serpico.vulnerability.cve">\.+</field>
+    <description>$(serpico.vulnerability.cve) affects $(serpico.package.name)</description>
+  </rule>
+
+  <rule id="100011" level="5">
+    <if_sid>100010</if_sid>
+    <options>no_full_log</options>
+    <field name="serpico.vulnerability.severity">LOW</field>
+    <description>$(serpico.vulnerability.cve) affects $(serpico.package.name)</description>
+  </rule>
+
+  <rule id="100012" level="7">
+    <if_sid>100010</if_sid>
+    <options>no_full_log</options>
+    <field name="serpico.vulnerability.severity">MEDIUM</field>
+    <description>$(serpico.vulnerability.cve) affects $(serpico.package.name)</description>
+  </rule>
+
+  <rule id="100013" level="10">
+    <if_sid>100010</if_sid>
+    <options>no_full_log</options>
+    <field name="serpico.vulnerability.severity">HIGH</field>
+    <description>$(serpico.vulnerability.cve) affects $(serpico.package.name)</description>
+  </rule>
+
+  <rule id="100014" level="13">
+    <if_sid>100010</if_sid>
+    <options>no_full_log</options>
+    <field name="serpico.vulnerability.severity">CRITICAL</field>
+    <description>$(serpico.vulnerability.cve) affects $(serpico.package.name)</description>
+  </rule>
+</group>
