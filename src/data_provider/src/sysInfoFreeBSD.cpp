@@ -435,7 +435,11 @@ void SysInfo::getProcessesInfo(std::function<void(nlohmann::json&)> callback) co
       for(auto &process : processes) {
           std::string user_time{""};
           std::string system_time{""};
-          etimes = std::stoll(process["elapsed-times"].get<std::string>());
+          try {
+              etimes = std::stoll(process["elapsed-times"].get<std::string>());
+          } catch (...) {
+              etimes = 0;
+          }
 
           user_time = process["user-time"].get<std::string>();
           system_time = process["system-time"].get<std::string>();
