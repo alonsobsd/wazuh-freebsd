@@ -286,7 +286,7 @@ nlohmann::json SysInfo::getPorts() const
     /* USER COMMAND PID FD PROTO LOCAL_ADDRESS FOREIGN_ADDRESS PATH_STATE CONN_STATE */
     
 #if __FreeBSD_version > 1500045
-    const auto query{exec(R"(sockstat -46qs --libxo json)")};
+    const auto query{Utils::exec(R"(sockstat -46qs --libxo json)")};
 
     if (!query.empty())
     {
@@ -315,17 +315,17 @@ nlohmann::json SysInfo::getPorts() const
                     }
                 }
 
-                localport = port["local"]["port"];
+                localport = port["local"]["port"].dump();
 
                 if (port["foreign"]["address"] == "*") {
                     if ((port["proto"] == "udp4") || (port["proto"] == "tcp4")) {
-                        remoteip = 0.0.0.0;
+                        remoteip = "0.0.0.0";
                     } else {
                         remoteip = "::";
                     }
                 }
 
-                remoteport = port["foreign"]["port"];
+                remoteport = port["foreign"]["port"].dump();
 
                 nlohmann::json portRecord {};
 
