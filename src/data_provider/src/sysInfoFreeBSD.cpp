@@ -18,6 +18,7 @@
 #include <sys/sysctl.h>
 #include <sys/vmmeter.h>
 #include <sys/utsname.h>
+#include <sys/param.h>
 #include "sharedDefs.h"
 #include <regex>
 #include "groups_freebsd.hpp"
