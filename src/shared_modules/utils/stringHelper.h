@@ -298,12 +298,26 @@ namespace Utils
 
     static std::string trimToOneSpace(const std::string& str)
     {
-       std::string str_output;
+        std::string str_output;
+        bool in_space = false;
 
-       str_output.clear();
-        std::unique_copy (str.begin(), str.end(), std::back_insert_iterator<std::string>(str_output),
-                                     [](char a,char b){ return std::isspace(a) && std::isspace(b);});
-
+        for (char c : str) {
+            if (c == '\n') {
+                str_output += '\n';
+                in_space = false;
+            }
+            else if (std::isspace(static_cast<unsigned char>(c))) {
+                if (!in_space) {
+                    str_output += ' ';
+                    in_space = true;
+                }
+            }
+            else {
+                str_output += c;
+                in_space = false;
+            }
+        }
+      
         return str_output;
     }
 
