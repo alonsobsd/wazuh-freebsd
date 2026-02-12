@@ -539,7 +539,7 @@ ifneq (,$(filter ${USE_INOTIFY},YES auto yes y Y 1))
 	DEFINES+=-DINOTIFY_ENABLED
 	ifeq (${uname_S},FreeBSD)
 		OSSEC_LDFLAGS+=-I/usr/local/include -L/usr/local/lib
-		OSSEC_LIBS+=-L/usr/local/lib -linotify
+		OSSEC_LIBS+=-L/usr/local/lib ${INOTIFY_LIB}
 		OSSEC_CFLAGS+=-I/usr/local/include
 	endif
 endif
